@@ -1,0 +1,47 @@
+name: dyme_nodes
+channels:
+  - salilab
+  - conda-forge
+  - defaults
+  - https://repo.anaconda.com/pkgs/main
+  - https://repo.anaconda.com/pkgs/r
+dependencies:
+  - python==3.11.11
+  - conda==25.1.1
+  - setuptools
+  - pip
+  - wheel
+  - conda-anaconda-telemetry
+  - conda-anaconda-tos[version='>=0.1.2']
+  - conda-content-trust
+  - conda-libmamba-solver
+  - menuinst
+  - anaconda-anon-usage
+  - openmm
+  - psutil
+  - mdtraj
+  - parmed
+  - pika
+  - pymongo
+  - h5py
+  - cuda-version==10.2
+  - ambertools
+  - netcdf4
+  - mpi4py
+  - pip:
+      - altgraph
+      - blosc2
+      - msgpack
+      - ndindex
+      - pyinstaller
+      - pyinstaller-hooks-contrib
+      - tables==3.10.2
+      - amberutils
+      - edgembar
+      - mmpbsa-py
+      - packmol-memgen
+      - pdb4amber
+      - pymsmt
+      - pytraj
+      - sander
+prefix: /dyme_env/anaconda/envs/dyme_nodes

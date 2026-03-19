@@ -1,0 +1,18 @@
+﻿.multiselect-option.first-option {
+    border-radius: 50px 0 0 50px;
+}
+
+.multiselect-option.last-option {
+    border-radius: 0 50px 50px 0;
+}
+
+.multiselect-option:hover {
+    background: #1f527e !important;
+    border-color: #1f527e !important;
+}
+
+.multiselect-option.active {
+    background: white !important;
+    color: #337ab7 !important;
+    font-weight: bold;
+}

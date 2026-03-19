@@ -1,0 +1,2 @@
+importlib==0     # block shadowing of stdlib importlib
+typing==0        # also block the old typing backport

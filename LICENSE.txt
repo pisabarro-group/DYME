@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Pedro M. Guillem, Gloria Ruiz-Gomez, MT-Pisabarro
+# Stuctural Bioinformatics group - TU Dresden
+
+# This software is licensed for **academic, educational, and non-commercial research use only**.
+# You may use, modify, and distribute the source code for academic purposes provided you:
+# 
+#   • Retain this copyright notice
+#   • Cite our work if DyME helps your reserch
+#   • Respect any third-party licenses of any of its components
+# 
+# **Commercial use of DYME** (including in proprietary software, SaaS platforms, or consulting services)
+# requires a commercial license agreements from the authors and the authors of its dependencies.
+
+# ⚠️ Note: This distribution includes third-party components under MIT, BSD, and GPL licenses.
+# When using these components, you must comply with their respective licenses.
+
+#   !!!!!!!!!!!!!!
+#   IMPORTANT!
+#   !!!!!!!!!!!!!!
+#    
+#   DyME is meant to run in local networks (where internet security is not a concern).
+#   THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND.
+

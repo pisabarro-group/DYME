@@ -1,0 +1,29 @@
+name: dyme_main
+channels:
+  - conda-forge
+  - defaults
+  - https://repo.anaconda.com/pkgs/main
+  - https://repo.anaconda.com/pkgs/r
+dependencies:
+  - python=3.11
+  - scikit-learn
+  - matplotlib
+  - werkzeug
+  - biopython
+  - pymongo
+  - statsmodels
+  - mdtraj
+  - pdbfixer
+  - pandas
+  - parmed
+  - flask
+  - bson
+  - mdanalysistests
+  - numpy
+  - openmm
+  - ambertools
+  - mdanalysis
+  - pika
+  - psutil
+  - mod_wsgi
+prefix: /dyme_env/anaconda/envs/dyme_main

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>NGL/MDsrv</title>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+    <link rel="icon" href="favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="css/font-awesome.min.css" />
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="subresource" href="css/light.css" />
+    <link rel="subresource" href="css/dark.css" />
+</head>
+<body>
+    <!-- NGL -->
+    <script src="js/ngl.js"></script>
+
+    <!-- UI -->
+    <script src="js/lib/signals.min.js"></script>
+    <script src="js/lib/tether.min.js"></script>
+    <script src="js/lib/colorpicker.min.js"></script>
+    <script src="js/ui/ui.js"></script>
+    <script src="js/ui/ui.extra.js"></script>
+    <script src="js/ui/ui.ngl.js"></script>
+    <script src="js/ui/ui.helper.js"></script>
+    <script src="js/gui.js"></script>
+
+    <script>
+        NGL.cssDirectory = "css/";
+        NGL.documentationUrl = "http://nglviewer.org/ngl/api/";
+        
+        NGL.MDsrvdocumentationUrl = "http://nglviewer.org/mdsrv";
+
+        // Datasources
+        NGL.DatasourceRegistry.add(
+            "file", new NGL.MdsrvDatasource( window.location.origin + "/" )
+        );
+        NGL.ListingDatasource = NGL.DatasourceRegistry.get( "file" );
+        NGL.TrajectoryDatasource = NGL.DatasourceRegistry.get( "file" );
+        document.addEventListener( "DOMContentLoaded", function(){
+            stage = new NGL.Stage();
+            NGL.StageWidget( stage );
+
+            var load = NGL.getQuery( "load" );
+            if( load ) stage.loadFile( load, { defaultRepresentation: true } );
+
+            var struc = NGL.getQuery( "struc" );
+            var traj = NGL.getQuery( "traj" );
+            var deltaTime = NGL.getQuery( "dt" );
+            var timeOffset = NGL.getQuery( "to" );
+            if( deltaTime === undefined ) deltaTime = "0.00";
+            if( timeOffset === undefined ) timeOffset = "0.00";
+            if( struc ){
+                var params = { defaultRepresentation: true };
+                stage.loadFile( struc, params ).then( function( o ){
+                    if( traj ){
+                        o.addTrajectory( traj, { "deltaTime": parseFloat(deltaTime), "timeOffset": parseFloat(timeOffset) } );
+                    }
+                } );
+            }
+        } );
+    </script>
+</body>
+</html>

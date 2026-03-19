@@ -1,0 +1,1 @@
+{"options":{"viewOn":"mutants","pipeline":[{"$group":{"_id":{"id_project":"$id_project","status":"$status"},"count":{"$sum":{"$numberInt":"1"}}}}]},"indexes":[],"collectionName":"mutants_status","type":"view"}
