@@ -12,7 +12,7 @@
  * This software may NOT be used for commercial purposes without a **separate commercial license**  
  * 
  * License: See LICENSE file in the repository.
- * Repository: https://github.com/pguillem/DYME
+ * Repository: https://github.com/pisabarro-group/DYME
  */
 
 //Load GUI configs

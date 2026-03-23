@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+mkdir -p /dyme_root/logs /dyme_root/data/db /dyme_root/projects /dyme_root/nodes/source /dyme_root/database/mongodb
 
 init_conda() {
     # >>> conda initialize >>>

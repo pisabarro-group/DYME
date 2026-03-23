@@ -36,6 +36,9 @@ LABEL version="1.0"
 LABEL description="DYME: Dynamic Mutagenesis Engine - Main Node"
 LABEL license="GPLv3"
 
+#Default UID/GID.. this gets overriden by install.sh
+ARG DYME_UID=1000
+ARG DYME_GID=1000
 #########################################################################################################################
 # STEP 1 - CREATE OUTPUT DIRECTORY FOR ASSETS & TRAJECTORIES 
 
@@ -56,10 +59,11 @@ VOLUME /dyme_root
 ###############################################################################################################################
 # add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
 RUN set -eux; \
-	groupadd --gid 999 --system mongodb; \
-	useradd --uid 999 --system --gid mongodb --home-dir /dyme_root/database/mongodb mongodb; \
+	groupadd --gid "${DYME_GID}" --system mongodb; \
+	useradd --uid "${DYME_UID}" --system --gid mongodb --home-dir /dyme_root/database/mongodb mongodb; \
 	mkdir -p /data/db /data/configdb; \
 	chown -R mongodb:mongodb /dyme_root/database/mongodb /data/configdb
+
 
 RUN set -eux; \
 	apt-get update; \

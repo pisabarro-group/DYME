@@ -85,7 +85,11 @@ echo ""
     fi
 
     if [ -d "$DYME_PATH" ]; then
-        break
+        mkdir -p $DYME_PATH;
+        mkdir -p $DYME_PATH/projects;
+        mkdir -p $DYME_PATH/logs;
+        mkdir -p $DYME_PATH/database/mongodb
+        mkdir -p $DYME_PATH/database/configdb
     else
         echo ""
         echo "The directory '$DYME_PATH' does not exist and will be created"
@@ -179,11 +183,14 @@ read -p "[press Enter to continue]" BLANK1
 # Step 4: Clear the screen
 clear
 
-
+#Get the current user's UID/GID
+HOST_UID="$(id -u)"
+HOST_GID="$(id -g)"
 
 #Build Main Node
+echo "Building dyme_main with UID=${HOST_UID} GID=${HOST_GID}"
 echo "Building DyME Main-Node container. Get a coffee... this will take a while"
-docker buildx build -f nodes/main_node/Dockerfile --output=type=docker --tag dyme_main --load .
+docker buildx build -f nodes/main_node/Dockerfile --build-arg DYME_UID="$HOST_UID" --build-arg DYME_GID="$HOST_GID" --output=type=docker --tag dyme_main --load .
 docker save -o dyme_main.tar dyme_main
 #docker run -it --rm -v /opt/dyme/projects:/dyme_root/projects   -v /opt/dyme/logs:/dyme_root/logs --entrypoint /bin/bash dyme_main
 
@@ -206,7 +213,9 @@ docker rm -f dyme_main 2>/dev/null || true
 echo "Starting Main Node (container name: dyme_main)!"
 echo "Running with DyME projects path at '$DYME_PATH'"
 #docker run -d --name dyme_main -v $DYME_PATH:/dyme_root -p 8080:8080 -p 27017:27017 dyme_main:latest 
-docker run -d -v $DYME_PATH:/dyme_root -p 8080:80 -p 27017:27017 dyme_main:latest 
+
+mkdir -p $DYME_PATH/logs $DYME_PATH/data/db $DYME_PATH/projects $DYME_PATH/nodes/source $DYME_PATH/database/mongodb
+docker run --name dyme_main -d -v $DYME_PATH:/dyme_root -p 8080:80 -p 27017:27017 dyme_main:latest 
 
 
 echo "Waiting for MongoDB to start..."
