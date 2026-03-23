@@ -243,7 +243,10 @@ docker exec dyme_main mongo dyme --eval "db.default_settings.insertOne({  \
 
 docker cp ./nodes/main_node/dyme_backup dyme_main:/dyme_backup
 docker exec -it dyme_main mongorestore --db dyme --dir /dyme_backup/dyme
-echo "Loaded base metadata of collections"
+echo "Loaded base collection metadata into DB"
+echo "---------------------------------------------------"
+echo "---------------------------------------------------"
+echo ""
 
 
 download_tar() {

@@ -59,10 +59,12 @@ VOLUME /dyme_root
 ###############################################################################################################################
 # add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
 RUN set -eux; \
-	groupadd --gid "${DYME_GID}" --system mongodb; \
-	useradd --uid "${DYME_UID}" --system --gid mongodb --home-dir /dyme_root/database/mongodb mongodb; \
-	mkdir -p /data/db /data/configdb; \
-	chown -R mongodb:mongodb /dyme_root/database/mongodb /data/configdb
+	getent group "${DYME_GID}"; \
+	if ! id -u mongodb >/dev/null 2>&1; then \
+		useradd --uid "${DYME_UID}" --gid "${DYME_GID}" --home-dir /dyme_root/database/mongodb mongodb; \
+	fi; \
+	mkdir -p /dyme_root/database/mongodb /data/db /data/configdb; \
+	chown -R "${DYME_UID}:${DYME_GID}" /dyme_root/database/mongodb /data/db /data/configdb
 
 
 RUN set -eux; \
