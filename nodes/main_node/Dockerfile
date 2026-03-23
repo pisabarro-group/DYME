@@ -63,16 +63,19 @@ VOLUME /dyme_root
 # Create mongodb user using host UID/GID.
 # Important: do not create the group if the GID already exists.
 RUN set -eux; \
-    getent group "${DYME_GID}" >/dev/null; \
+    if ! getent group mongodb >/dev/null; then \
+        groupadd -g "${DYME_GID}" -o mongodb; \
+    fi; \
     if ! id -u mongodb >/dev/null 2>&1; then \
         useradd \
             --uid "${DYME_UID}" \
-            --gid "${DYME_GID}" \
+            --gid mongodb \
             --home-dir /dyme_root/database/mongodb \
             --create-home \
             --shell /bin/bash \
             mongodb; \
     fi; \
+    mkdir -p /dyme_root/database/mongodb /data/db /data/configdb; \
     chown -R "${DYME_UID}:${DYME_GID}" /dyme_root/database/mongodb /data/db /data/configdb
 
 RUN set -eux; \
