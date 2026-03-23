@@ -88,8 +88,9 @@ echo ""
         mkdir -p $DYME_PATH;
         mkdir -p $DYME_PATH/projects;
         mkdir -p $DYME_PATH/logs;
-        mkdir -p $DYME_PATH/database/mongodb
-        mkdir -p $DYME_PATH/database/configdb
+        mkdir -p $DYME_PATH/database/mongodb;
+        mkdir -p $DYME_PATH/database/configdb;
+        break
     else
         echo ""
         echo "The directory '$DYME_PATH' does not exist and will be created"
@@ -242,7 +243,52 @@ docker exec dyme_main mongo dyme --eval "db.default_settings.insertOne({  \
 
 docker cp ./nodes/main_node/dyme_backup dyme_main:/dyme_backup
 docker exec -it dyme_main mongorestore --db dyme --dir /dyme_backup/dyme
-echo "Loaded base collections"
+echo "Loaded base metadata of collections"
+
+
+download_tar() {
+
+    TAR_FILE="dyme-test-data-md.tar"
+    ZENODO_URL="https://zenodo.org/records/18014320/files/dyme-test-data-md.tar?download=1"
+
+    echo "Downloading test data (11 GB)..."
+    curl -L --fail --output "$TAR_FILE" "$ZENODO_URL"
+    echo "Download completed: $TAR_FILE"
+
+    #Unpack MD trajectories in project folder
+    echo "Unpacking MD trajectories to projects folder"
+    tar -xf dyme-test-data-md.tar -C "$DYME_PATH/projects"
+
+    #Import test data database records (Approx 22Mb)
+    echo "Loading test data records into Database"
+    docker exec -it dyme_main mongoimport --db dyme --collection projects --file /dyme_backup/projects.json --jsonArray
+    docker exec -it dyme_main mongoimport --db dyme --collection mutants --file /dyme_backup/mutants.json --jsonArray
+    docker exec -it dyme_main mongoimport --db dyme --collection processed_data --file /dyme_backup/processed_data.json --jsonArray
+
+    #UPDATE PROJECT FOLDERS IN INTERNAL DB TO MATCH DYME_PATH
+    docker exec dyme_main mongosh dyme --eval \
+    'db.projects.updateOne({id_project: 49}, {$set: {project_folder: "'"$DYME_PATH"'/projects/49"}})'
+
+    docker exec dyme_main mongosh dyme --eval \
+    'db.projects.updateOne({id_project: 50}, {$set: {project_folder: "'"$DYME_PATH"'/projects/50"}})'
+
+    echo "Test Data - Load Complete :)"
+    echo "---------------------------------------------------"
+}
+
+ask_download() {
+    local answer
+    read -r -p "Would you like to download and install MD test-data (11 GB) files from Zenodo? [y/N] " answer
+    case "$answer" in
+        [Yy]|[Yy][Ee][Ss]) download_tar ;;
+        *)
+            echo "Aborted."
+            exit 0
+            ;;
+    esac
+}
+
+ask_download
 
 echo "------------------------------------------------------------"
 echo "       Install complete!!. Happy HTP mutagenesis :)"
