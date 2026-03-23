@@ -202,13 +202,14 @@ docker builder prune -f --verbose
 echo ""
 
 #Boot the main node, with the database
-docker rm -f dyme_main
+docker rm -f dyme_main 2>/dev/null || true
 echo "Starting Main Node (container name: dyme_main)!"
 echo "Running with DyME projects path at '$DYME_PATH'"
-docker run -d --name dyme_main -v $DYME_PATH:/dyme_root -p 8080:8080 -p 27017:27017 dyme_main:latest 
+#docker run -d --name dyme_main -v $DYME_PATH:/dyme_root -p 8080:8080 -p 27017:27017 dyme_main:latest 
+docker run -d -v $DYME_PATH:/dyme_root -p 8080:80 -p 27017:27017 dyme_main:latest 
 
 
-echo "Waiting for Database to start..."
+echo "Waiting for MongoDB to start..."
 until docker exec dyme_main mongo --eval "db.adminCommand('ping')" &>/dev/null; do
   sleep 2
 done

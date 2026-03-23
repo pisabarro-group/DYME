@@ -253,10 +253,9 @@ ENV PATH=/usr/local/bin:/dyme_root/anaconda/envs/dyme_main/bin:$PATH
 ENTRYPOINT ["/usr/local/bin/dyme-entrypoint.sh"]
 #SHELL bash
 
-# Expose MongoDB Database port
-EXPOSE 27017:27017
-#Expose Ports for web access and API
-EXPOSE 8080:80
+# Expose MongoDB Database port and Web server
+EXPOSE 27017
+EXPOSE 80
 
 #Run mongodb Database
 #CMD ["mongod", "--bind_ip_all"]
