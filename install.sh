@@ -191,7 +191,7 @@ HOST_GID="$(id -g)"
 #Build Main Node
 echo "Building dyme_main with UID=${HOST_UID} GID=${HOST_GID}"
 echo "Building DyME Main-Node container. Get a coffee... this will take a while"
-docker buildx build -f nodes/main_node/Dockerfile --build-arg DYME_UID="$HOST_UID" --build-arg DYME_GID="$HOST_GID" --output=type=docker --tag dyme_main --load .
+docker buildx build -f nodes/main_node/Dockerfile --build-arg DYME_UID="$HOST_UID" --build-arg DYME_GID="$HOST_GID" --build-arg MODELLER_LICENSE="$MODELLER_LICENSE" --output=type=docker --tag dyme_main --load .
 docker save -o dyme_main.tar dyme_main
 #docker run -it --rm -v /opt/dyme/projects:/dyme_root/projects   -v /opt/dyme/logs:/dyme_root/logs --entrypoint /bin/bash dyme_main
 

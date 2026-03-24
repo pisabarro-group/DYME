@@ -38,8 +38,11 @@ LABEL license="GPLv3"
 # Default UID/GID, overridden by install.sh
 ARG DYME_UID=1000
 ARG DYME_GID=1000
+ARG MODELLER_LICENSE
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV KEY_MODELLER=${MODELLER_LICENSE}
+ENV TZ=Etc/UTC
 
 #########################################################################################################################
 # STEP 1 - CREATE OUTPUT DIRECTORY FOR ASSETS & TRAJECTORIES
@@ -60,8 +63,21 @@ VOLUME /dyme_root
 # STEP 2 - INSTALL BASE PACKAGES + MONGODB
 #########################################################################################################################
 
-# Create mongodb user using host UID/GID.
-# Important: do not create the group if the GID already exists.
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        gnupg \
+        jq \
+        numactl \
+        procps \
+        wget \
+        tzdata; \
+    rm -rf /var/lib/apt/lists/*
+
+# Create mongodb group/user using host UID/GID
+# -o allows a non-unique GID, which you need when the host GID already exists in the image
 RUN set -eux; \
     if ! getent group mongodb >/dev/null; then \
         groupadd -g "${DYME_GID}" -o mongodb; \
@@ -77,18 +93,6 @@ RUN set -eux; \
     fi; \
     mkdir -p /dyme_root/database/mongodb /data/db /data/configdb; \
     chown -R "${DYME_UID}:${DYME_GID}" /dyme_root/database/mongodb /data/db /data/configdb
-
-RUN set -eux; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-        ca-certificates \
-        curl \
-        gnupg \
-        jq \
-        numactl \
-        procps \
-        wget; \
-    rm -rf /var/lib/apt/lists/*
 
 # gosu for privilege drop
 ENV GOSU_VERSION=1.17
@@ -116,13 +120,13 @@ RUN set -eux; \
     apt-mark manual $savedAptMark > /dev/null; \
     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
 
-# MongoDB 8.0 repo, let apt choose latest available stable release in that branch
+# MongoDB 8.0 repo for Ubuntu 22.04 (Jammy)
 ARG MONGO_MAJOR=8.0
 
 RUN set -eux; \
     curl -fsSL "https://www.mongodb.org/static/pgp/server-${MONGO_MAJOR}.asc" \
         | gpg --dearmor -o "/usr/share/keyrings/mongodb-server-${MONGO_MAJOR}.gpg"; \
-    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-${MONGO_MAJOR}.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/${MONGO_MAJOR} multiverse" \
+    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-${MONGO_MAJOR}.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/${MONGO_MAJOR} multiverse" \
         > "/etc/apt/sources.list.d/mongodb-org-${MONGO_MAJOR}.list"; \
     apt-get update; \
     apt-get install -y --no-install-recommends mongodb-org; \
@@ -162,6 +166,9 @@ RUN conda install -y -n base conda-libmamba-solver && \
 RUN conda env create -f /dyme-env.yml && \
     conda clean --all -y
 
+RUN conda install -y -n dyme_main salilab::modeller && \
+    conda clean --all -y
+
 #########################################################################################################################
 # STEP 4 - WEB SERVER SETUP
 #########################################################################################################################
@@ -170,8 +177,8 @@ RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
         apache2 \
-        libapache2-mod-php7.4 \
-        libapache2-mod-wsgi; \
+        libapache2-mod-php \
+        libapache2-mod-wsgi-py3; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
 

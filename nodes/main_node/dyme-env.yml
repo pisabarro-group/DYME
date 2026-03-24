@@ -2,6 +2,7 @@ name: dyme_main
 channels:
   - conda-forge
   - defaults
+  - salilab
   - https://repo.anaconda.com/pkgs/main
   - https://repo.anaconda.com/pkgs/r
 dependencies:
@@ -26,4 +27,5 @@ dependencies:
   - pika
   - psutil
   - mod_wsgi
+  - libstdcxx-ng>=13
 prefix: /dyme_env/anaconda/envs/dyme_main
