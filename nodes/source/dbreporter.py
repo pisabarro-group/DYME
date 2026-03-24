@@ -66,7 +66,7 @@ class DYMEReporter(object):
     """
     
     #Constructor
-    def __init__(self, project_id, mutantID, reportInterval=10000, dbtype="MongoDB"):
+    def __init__(self, project_id, mutantID, reportInterval=10000, dbtype="MongoDB", dbhostname):
         """Create a DYMEReporter.
 
         Parameters
@@ -134,7 +134,7 @@ class DYMEReporter(object):
         
         #Connect Database and store in self pointer
         if(dbtype == "MongoDB"):
-           self.DB = DymeDB()
+           self.DB = DymeDB(dbhostname)
            self._isConnected = True
         else:
            try:            

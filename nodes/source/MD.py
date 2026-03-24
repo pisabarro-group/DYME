@@ -464,8 +464,8 @@ class MD():
             #Attach ParmedStateReporter - Updates Log File
             simulation.reporters.append(ParmedStateReporter(output_txt, reporterFreq))
             print(f"Attaching ParmedStateReporter trajectory file to {output_txt}")
-            #Attach DYMEReporter - Updates Database
-            simulation.reporters.append(DYMEReporter(project_id, mutantID, reporterFreq))
+            #Attach DYMEReporter - Updates Database - 2026 Fix dbhostname in dbreporter
+            simulation.reporters.append(DYMEReporter(project_id, mutantID, reporterFreq, "MongoDB", dbhostname))
             print(f"Attaching DYMEReporter hook to DB")
             #Attach HDF5Reporter - Updates TRajectory File
             simulation.reporters.append(HDF5Reporter(str(output_h5), reporterFreq))
