@@ -1935,8 +1935,6 @@ def launchVMD():
     traj.save_netcdf(trajectory_nc)
     traj = None
     #BETTER WITH MDTRAJ...
-    #cmd    = f'/group/bioinfp_apps/anaconda/envs/openmm-env/bin/mdconvert -o {trajectory_nc} {trajectory_h5}'
-    #run([cmd], cwd=mutantdir+"/outputs/", stdin=PIPE, shell=True, executable='/bin/bash')
     print('NC Trajectory created!')
 
     #2. Create vmdload.vmd

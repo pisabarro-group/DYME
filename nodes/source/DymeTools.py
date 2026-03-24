@@ -20,7 +20,7 @@ Feb 2023 -  Added Tleap generators
 Mar 2023 -  Added mmpbsa generators
             Added NC trajectory file converter
             
-Sep 2023 - Added WaterMapper functions (from WaSiMap)
+Sep 2023 - Added WaterMapper functions (today http://www.github.com/pisabarro-group/WaSiMap.git)
 
 Jan 2024 - Added Contact Scavenger (Forward and Reverse at 10, 20 and 50% thresholds)
 
@@ -716,11 +716,6 @@ class MMGBSA:
         if os.path.exists(f'{targetdir}/output_md.nc'):
             os.remove(f'{targetdir}/output_md.nc')
         
-        #PEDRO AUG 2024 - Seems mdconvert is not doing a very good job converting to netcfd?.. we use mdtraj directly for this
-        
-        #cmd = f'/group/bioinfp_apps/anaconda/envs/openmm-env/bin/mdconvert -o {targetdir}/output_md.nc {origdir}/output_md.h5'
-        
-        #print('WARNING: These paths have to change for dockerizing someday!.. they point to a location exclusive to biotec')
         #print('Creating NC format of the original HDF5 trajectory in Ramdrive!')
         #run([cmd], cwd=targetdir, stdin=PIPE, shell=True, executable='/bin/bash')     
         traj  = md.load_hdf5(f'{origdir}/output_md.h5')
@@ -1291,7 +1286,7 @@ class InputSystem():
         #TODO Figure out a way to have conda add the right paths to Ambertools21 tleap
         #This is shitty, because ambertools installed via conda adds a PATH to its /bin upon activation, and python shells don't activate the conda env
         print("WARNING: Tleap is being defined with an absolute path to the local environment - Remember to make tleap executable be available globally before distributing")
-        run([f'/group/bioinfp_apps/anaconda/envs/openmm-env/bin/tleap -I {self.inputpath} -f {file}'], bufsize=2048, stdin=PIPE, shell=True, executable='/bin/bash')
+        run([f'tleap -I {self.inputpath} -f {file}'], bufsize=2048, stdin=PIPE, shell=True, executable='/bin/bash')
         
         
         #PEDRO - MARCH 6 2023

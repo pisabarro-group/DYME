@@ -1,12 +1,12 @@
 """
 Created on Wed Sep 28 16:59:18 2022
 
-File:           dbreporter.py
+File:        dbreporter.py
 Description: Outputs simulation trajectories and status into a remote database.
              Two Database Engines are suported. MongoDB and MySQL. This is the Database 
              reporting engine of the DYME platform. 
              
-             Base class structure was taken from dcdreporter.py class of OpenMM by Peter Eastman.
+             Base class structure was taken from dcdreporter.py by Peter Eastman (OpenMM).
 
 Provides:   DYMEReporter()
 
@@ -20,12 +20,12 @@ database/collection don't exist, it creates both. Frame number is
 used as ID of the document within the collection.
 
 --MYSQL-- TODO
-The MySQL output creates 3 relational tables. A table to store frame IDs, 
+Ideally MySQL output creates 3 relational tables. A table to store frame IDs, 
 and a table to store atom attributes per frame. This uses the same data, 
 but executes SQL inserts with peewee instead of pymongo's inserts.
 
 Oct 1 2022: TODO: Create a parser to convert DB data back into an OpenMM state object.
-This will be done in the dyme_utilities.py file.
+This could be done in a dyme_utilities.py file.
 
 
 Jul 2023: Added MD status variable updating.
@@ -35,8 +35,6 @@ Author:
 Pedro Manuel Guillem Gloria <pedro_manuel.guillem_gloria@tu-dresden.de>
 Structural Bioinformatics Lab - BIOTEC - Pisabarro Group
 Technische Universität Dresden
-
-@author: pegu906a
 """
 
 from __future__ import absolute_import

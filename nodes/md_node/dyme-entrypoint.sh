@@ -40,7 +40,7 @@ case "$NODETYPE" in
   MD)
     echo "Starting MD.py with dbhost: $DBHOST"
     init_conda
-    if [ "$PROJ" -ne "" ]; then
+    if [ -n "$PROJ" ]; then
       exec python /dyme_base/backend/dyme/MD.py -d "$DBHOST" -u
     else
       exec python /dyme_base/backend/dyme/MD.py -d "$DBHOST"
