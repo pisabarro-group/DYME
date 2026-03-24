@@ -66,7 +66,7 @@ class DYMEReporter(object):
     """
     
     #Constructor
-    def __init__(self, project_id, mutantID, reportInterval=10000, dbtype="MongoDB", dbhostname):
+    def __init__(self, project_id, mutantID, reportInterval=10000, dbtype="MongoDB", dbhostname="localhost"):
         """Create a DYMEReporter.
 
         Parameters
