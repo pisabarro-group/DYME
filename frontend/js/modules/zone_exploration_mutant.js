@@ -83,16 +83,16 @@ const shiftPlugin = {
     id: 'shiftPlugin',
     afterUpdate: function(chart) {
         if(!isthresholdchange){
-        //console.log("im hereeeeeeee")
-        var offset = 0;
-        chart.config.data.datasets.forEach((dataset, datasetIndex) => {
-            const meta = chart.getDatasetMeta(datasetIndex); // Correct way to get metadata
-            meta.data.forEach((element) => {
-                if (element.x !== undefined) {
-                    element.x += offset; // Shift each dataset by offset
-                }
-            });
-            offset += 5;          
+            //console.log("im hereeeeeeee")
+            var offset = 0;
+            chart.config.data.datasets.forEach((dataset, datasetIndex) => {
+                const meta = chart.getDatasetMeta(datasetIndex); // Correct way to get metadata
+                meta.data.forEach((element) => {
+                    if (element.x !== undefined) {
+                        element.x += offset; // Shift each dataset by offset
+                    }
+                });
+                offset += 5;          
             })
         } else {
             console.log("is threshold change");
@@ -717,14 +717,14 @@ function renderMutantTable(){
         }
     });
 
-    //Fix stats for Null std
+        //Fix stats for Null std
     for (const k in stats) {
         let v = stats[k];
         if (v && typeof v === 'object' && ('$numberDouble' in v)) v = v.$numberDouble;
         if (typeof v === 'string') v = Number(v.replace(/,/g, ''));
         if (!Number.isFinite(v)) v = 0;
         stats[k] = v;
-    }
+    }   
     //Fill descriptive statistics table
     $("#series-count").html(totalmutants)
     $("#series-mean").html(parseFloat(stats['mean'].toFixed(1)))
@@ -781,10 +781,10 @@ function renderMutantTable(){
     $('#disabledRange').attr('value', Math.abs(reference))
     
     $('#disabledRange').prop('disabled', true);
-
+    
     $('#best').html(max)
     $('#worse').html(min)
-  
+      
     $('#disabledRange').tooltip('show');
     $('#best').tooltip('show')
     $('#worse').tooltip('show')
@@ -1391,7 +1391,7 @@ function paintENERGY_single(component, dataEnergy){
                 },
                 responsive: true, 
                 legend: {
-                        display: true,
+                        display: true, 
                 },
                 elements: {
                     pointRadius: 10,
@@ -1573,7 +1573,7 @@ function paintENERGY_pairwise(component, dataEnergy){
     max = Math.max.apply(null, Object.values(pairwise.TOT_PW)) //get max energy
     const map = (value, x1, y1, x2, y2) => (value - x1) * (y2 - x2) / (y1 - x1) + x2; //map to percent
 
-    //Labels and data
+    //Labels and data   
     dots = []
     //let labelxnum = {}
     labelx = [] //X label
@@ -1631,33 +1631,45 @@ function paintENERGY_pairwise(component, dataEnergy){
         //Relevant Energy Threshold.. anything below 0.5 kcal is a weak vdb contact...
         if(v1 < -0.51 && !residuesinxaxix.includes(resmap[x1])){ // Make sure we don't display an anchorpoint on X label
                 //console.log(resmap[x1])
-            v1 = map(v1,-0.4, min,5,100) //Calculate alpha transparency for this coords
-            receptorresidues.push(x1)
-            if (!labelx.includes(resmap[x1])) {
-                labelx.push(resmap[x1]);
-                //labelxnum[resmap[x1]] = x_2+pairwise_offset
-                //x_2 = x_2+1
-            }
-            
-            if (!labely.includes(resmap[y1])) {
-                labely.push(resmap[y1]);
-                labely2.push(resmap2[y1]); //Fill alternate Y axis (with PDB)
+                v1 = map(v1,-0.4, min,5,100) //Calculate alpha transparency for this coords
+                receptorresidues.push(x1) 
+                if (!labelx.includes(resmap[x1])) {
+                    labelx.push(resmap[x1]);
+                    //labelxnum[resmap[x1]] = x_2+pairwise_offset
+                    //x_2 = x_2+1
+                }
+                
+                if (!labely.includes(resmap[y1])) {
+                    labely.push(resmap[y1]);
+                    labely2.push(resmap2[y1]); //Fill alternate Y axis (with PDB)
 
-            }
+                }
                 y2label = resmap3[y1] //Label of a mutation in this dot, if it exists
-            //Add datapoint
-            dots.push(
-                {x: resmap[x1], y: resmap[y1], v: v1, en: pairwise.TOT_PW[key]} //Add a datapoint to the heatmap
-            )
+                //Add datapoint
+                dots.push(
+                    {x: resmap[x1], y: resmap[y1], v: v1, en: pairwise.TOT_PW[key], mutations: muts, y2: y2label} //Add a datapoint to the heatmap
+                )
+
+                //Store the max contact energy being displayed for threshold comparison
+                if(pairwise.TOT_PW[key] < maxenergyofseries ){
+                    maxenergyofseries = pairwise.TOT_PW[key];
+                }
         }
        
     }  
+    //console.log(dots)
+    //console.log(labelx)
+    //console.log(labely)
+    //console.log(labely2)
     //pairwise_offset += 0.05;
-    //console.log(labelxnum)  
+    //dots.sort((a, b) => parseInt(a.x.slice(1)) - parseInt(b.x.slice(1)));
+    dots.sort((a, b) => parseInt((a.x || "").slice(1)) - parseInt((b.x || "").slice(1)));
+    labelx.sort((a, b) => parseInt((a.x || "").slice(1)) - parseInt((b.x || "").slice(1)));
+    labely.sort((a, b) => parseInt((a.x || "").slice(1)) - parseInt((b.x || "").slice(1)));
+    labely2.sort((a, b) => parseInt((a.x || "").slice(1)) - parseInt((b.x || "").slice(1)));
 
-    var color = mutantColors.find(obj => {
-        return obj.mutantID === mutantID
-    })
+   // console.log(labely)
+    
     if(mutantID != 1){
         lab = "Mutant "+mutantID
     } else{
@@ -1675,6 +1687,32 @@ function paintENERGY_pairwise(component, dataEnergy){
         width: 20,
         height: 20,
         //xAxisID: 'x2'
+
+        backgroundColor: function(ctx) {
+            const threshold = thresholdMap;
+            const alphaMin = 0.1;
+            const alphaMax = 1.0;
+
+            const value = ctx.raw.en*-1;  // <- per-dot value
+            const maxVal = maxenergyofseries*-1;        // <- global max (must be accessible)
+
+            // Convert hex (#RRGGBB) to RGB
+            const hex = color.color.replace('#', '');
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+
+            // Compute alpha
+            
+
+            let alpha = alphaMax;
+            if (value > threshold) {
+                alpha = alphaMin + ((value/threshold) / (threshold)) * (alphaMax - alphaMin);
+                alpha = Math.max(alphaMin, Math.min(alphaMax, alpha));
+            }
+            //console.log(value)
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
     }
     
 
@@ -1732,26 +1770,27 @@ function paintENERGY_pairwise(component, dataEnergy){
                     },
                     tooltip: {
                         bodyFont: {
-                            size: 16 // Increase font size (default is usually 12, so +2 points)
+                            size: 14 // Increase font size (default is usually 12, so +2 points)
                         },
                         titleFont: {
-                            size: 16
+                            size: 14
                         },
                         callbacks: {
                             title: function(context) {
-                                //console.log(context)
-                                //console.log(mutants[mutantID].mutant)
-                                //console.log(pairwise_chart.options.scales.y2.labels)
-
+                                
+                                
                                 if(!displayNGLinsteadOfPDB){ //PEDRO: 2025 - Fix showing the toggled yAxis on the heatmap plugin
                                     anchorshow = context[0].formattedValue //Show initial
                                 } else {
                                     const index = pairwise_chart.options.scales.y.labels.indexOf(context[0].formattedValue);
                                     anchorshow = pairwise_chart.options.scales.y2.labels[index] // Show mapped
                                 }
+                                if(context[0].raw.mutations[context[0].raw.y2] !== undefined){ //2025 - PEDRO - SHOW MUTATION IF IT EXISTS ON THE TOOLTIP
+                                    anchorshow  = anchorshow+context[0].raw.mutations[context[0].raw.y2]
+                                } 
 
                                 //let title = "ΔG from "+context[0].formattedValue+" to "+context[0].label
-                                let title = "ΔG from "+anchorshow+" to "+context[0].label
+                                let title = "Pairwise ΔG from "+anchorshow+" to "+context[0].label
                                 //console.log(context)
                                 return title;
                             },
@@ -1804,7 +1843,7 @@ function paintENERGY_pairwise(component, dataEnergy){
                             text: 'Counterpart Residue',
                             display: true
                         }
-                    },
+                    },  
                     //,
                     //x2: {
                     //    type: 'linear',
@@ -1860,11 +1899,38 @@ function paintENERGY_pairwise(component, dataEnergy){
     } else {
        //Add new data to existing chart
        pairwise_chart.data.datasets.push(datasetadd)
+       updateXLabels(pairwise_chart, labelx)
+       updateYLabels(pairwise_chart, labely)
+       updateY2Labels(pairwise_chart, labely2)
        pairwise_chart.update();
        setTimeout(() => resetZoom_pairwise(), 1500);
 
       
     }
+}
+
+function updateXLabels(chart, raw) {
+  const existing = chart.options.scales.x.labels ?? [];
+  const incoming = raw;
+  const merged   = sortResidueLabels([...existing, ...incoming]);
+  chart.options.scales.x.labels = merged;               // <-- lock order here
+  chart.options.scales.x.type = 'category'; // for clarity
+}
+
+function updateYLabels(chart, raw) {
+  const existing = chart.options.scales.y.labels ?? [];
+  const incoming = raw;
+  const merged   = sortResidueLabels([...existing, ...incoming]);
+  chart.options.scales.y.labels = merged;               // <-- lock order here
+  chart.options.scales.y.type = 'category'; // for clarity
+}
+
+function updateY2Labels(chart, raw) {
+  const existing = chart.options.scales.y2.labels ?? [];
+  const incoming = raw;
+  const merged   = sortResidueLabels([...existing, ...incoming]);
+  chart.options.scales.y2.labels = merged;               // <-- lock order here
+  chart.options.scales.y2.type = 'category'; // for clarity
 }
 
 function resetZoom_pairwise(){
@@ -1873,7 +1939,7 @@ function resetZoom_pairwise(){
 }
 
 
-
+//Renders anchorpoint buttons below NGL canvas
 function renderAnchorPoints(){
     var btn = ''
     Object.entries(residuemap).forEach(function(res){
@@ -1883,16 +1949,32 @@ function renderAnchorPoints(){
                     num     = chain["resno_PDB"]
                     resid   = chain["resno_NGL"]
                     origresname = to1[chain["name"]]
-                    btn += '<button class="btn btn-orange btn-sm" onclick="focusOnAnchor('+resid+')">'+origresname+num+'</button> '
+                    ch   = chain["chain"]
+                    btn += '<button class="btn btn-orange btn-sm" onclick="focusOnAnchor(\''+ch+":"+resid+'\')">'+origresname+num+'</button> '
                 }
             }
         })
     })   
-    btn += "<br><span class='small text-muted'>Anchor points</span>"
+    btn += "<br><span class='small text-muted'>(Click on Anchor point to Focus) </span>"
     $("#anchorpointlist").html(btn)
 }
 
 
+function focusOnAnchor(label, { componentIndex = 0, duration = 1000 } = {}) {
+  const comp = molStructure.compList[componentIndex];
+  if (!comp) return;
+
+  // Parse "A:620" or "620" (default chain A)
+  const m = String(label).trim().match(/^([A-Za-z])?:?(\d+)$/);
+  if (!m) return;
+
+  const chain = (m[1] || 'A').toUpperCase();
+  const resno = +m[2];
+  const sel = `:${chain} and ${resno}`;
+
+  // Get StructureView
+  comp.autoView(sel, 1500);  // adjust zoom factor if needed
+}
 
 
 //Add button for a mutant in 3D Explorer
@@ -1942,6 +2024,11 @@ function toggleWater(button, id){
     });
 }
 
+//Turns contacts on/off
+function toggleContacts(button, id){
+
+}
+
 
 //update Table inside tooltip
 function updateWatersTable(id){
@@ -1958,6 +2045,7 @@ function updateWatersTable(id){
             // Loop through the inner object
             Object.entries(residues).forEach(([name, infowaters]) => {
                 if(name != 'sites'){
+                    if(infowaters.waters.length > 0){
                     buts = "";
                     watsclases = []
                     infowaters.waters.forEach(function(water, index){
@@ -1965,13 +2053,17 @@ function updateWatersTable(id){
                         buts += `<button class="btn btn-outline-red btn-icon wat${water}" title="Residence: ${infowaters.residence[index]}%" type="button">${water}</button>`
                         watsclases.push("b"+water)
                     })
-                                  
-                    rows.push(`
-                    <td>${name}</td>
-                    <td style="text-align: left;">
-                        ${buts}
-                    </td>
-                    <td>${infowaters.residence.reduce((a, b) => a + b)}%</td>`)
+                        reside = infowaters.residence.reduce((a, b) => a + b);
+                        if(reside > 100) {
+                            reside = 100;
+                        }
+                        rows.push(`
+                        <td>${name}</td>
+                        <td style="text-align: left;">
+                            ${buts}
+                        </td>
+                        <td>${reside}%</td>`)
+                    }
                 }
             });
 
@@ -2022,6 +2114,7 @@ function updateWatersTable(id){
 
 function updateWatersTableFront(){
     $("#table-waters-body-front").html("");
+    console.log(waterdisplay)
     htmlrow = ""
     if(Object.keys(waterdisplay).length > 0) {
         Object.entries(waterdisplay).forEach(([mutantID, residues]) => {
@@ -2067,6 +2160,7 @@ function loadNGLViewer(canvas, response){
     mutantID = response["mutantID"]
     pdbtextf = response["pdbfile"]
     watersites = response["watersites"]
+    mutantIDname = "Mutant "+mutantID
     //Create a string blob with the PDB file
     var stringBlob = new Blob( [ pdbtextf ], { type: 'text/plain'} );
     
@@ -2078,8 +2172,9 @@ function loadNGLViewer(canvas, response){
     //If this is the first object in the canvas, create the stage
     if(stage === undefined){
         stage = new NGL.Stage(canvas.attr("id"));  
-        stage.setParameters({ backgroundColor: "white", hoverTimeout: -1 } )
+        stage.setParameters({ backgroundColor: "white"} )
         stage.setSpin(setspin);
+       
     } 
 
     //Calculate Anchor points
@@ -2110,7 +2205,7 @@ function loadNGLViewer(canvas, response){
     seleall = allres[0]+"-"+allres[allres.length-1]
     
     //Load PDB info stage
-    stage.loadFile( stringBlob, { ext: "pdb" , defaultRepresentation: false} ).then(function(o){
+    stage.loadFile( stringBlob, { ext: "pdb" , defaultRepresentation: false, name: mutantIDname} ).then(function(o){
         //molStructure.clearRepresentations();
         //console.log(o.structure.getResidue(13))
         //TEMPORAL HIDE STRUCTURE 3D
@@ -2123,6 +2218,7 @@ function loadNGLViewer(canvas, response){
         groupsNGL[mutantID] = {};  // Create group 1 at index 0
         groupsNGL[mutantID].molecule = o;  // PDB molecule 1
         groupsNGL[mutantID].sphereRep = [];
+        groupsNGL[mutantID].contactsRep = [];
       
 
         seleres = anchors.join(', ');
@@ -2131,13 +2227,25 @@ function loadNGLViewer(canvas, response){
 
         //////////////////////Add representations for molecule 1 (group 1)////////////////////////////// 
         if(mutantID === 1){
-            groupsNGL[mutantID].molecule.addRepresentation("ribbon",  {sele: "all and (not hydrogen)", color: color.color.slice(0, -2), opacity: 0.1});
-            //console.log(color)
-            groupsNGL[mutantID].molecule.addRepresentation("line",    {sele: "("+seleres+")"+" and (not hydrogen)"})           
+            groupsNGL[mutantID].molecule.addRepresentation("cartoon",  {sele: "all and (not hydrogen)", color: color.color.slice(0, -2), pickable: true, opacity: 0.1});
+            groupsNGL[mutantID].molecule.addRepresentation("ball+stick",    {sele: "("+seleres+")"+" and (not hydrogen)", pickable: true});
+            //groupsNGL[mutantID].molecule.addRepresentation("contact",    {sele: "("+seleres+")", pickable: true, radius: 0.5, maxDistance: 3.5, piStacking: true, color: "#5579bbff"})   
+            groupsNGL[mutantID].molecule.addRepresentation('label', {
+                  // pick one anchor atom per residue: CB (or CA for GLY which has n CB)
+                  sele: 'protein and (name CA)',
+                  labelType: 'text',
+                  labelText: ap => `${ap.resname}${ap.resno}${ap.chainname ? ':' + ap.chainname : ''}`,
+                  color: 'black',
+                  attachment: 'middle-right',  // nudge relative to anchor atom
+                  xOffset: 0,
+                  yOffset: 0,
+                  zOffset: 1.5,                // lift the label off the surface a bit
+                  useScreen: true              // keep constant screen size
+                  });      
             groupsNGL[mutantID].molecule.autoView(duration, seleres);
         } else {
-            groupsNGL[mutantID].molecule.addRepresentation("ribbon",  {sele: "all and (not hydrogen)", color: color.color.slice(0, -2), opacity: 0.5});
-            groupsNGL[mutantID].molecule.addRepresentation("line",    {sele: "("+seleres+")"+" and (not hydrogen)", color: "element", colorValue: color.color.slice(0, -2)}) //Pedro change rep Aug 1 2024
+            groupsNGL[mutantID].molecule.addRepresentation("ribbon",  {sele: "all and (not hydrogen)", color: color.color.slice(0, -2), opacity: 0.5, pickable: true});
+            groupsNGL[mutantID].molecule.addRepresentation("ball+stick",    {sele: "("+seleres+")"+" and (not hydrogen)", color: "element", colorValue: color.color.slice(0, -2), pickable: true}) //Pedro change rep Aug 1 2024
         }
         //////////////////////////////////////////////////////////////////////////////
 
@@ -2147,18 +2255,37 @@ function loadNGLViewer(canvas, response){
         // Put here for each wetspot add object to spherepositions   
         //console.log(watersites)
 
-        //Check If Dyme found any water sites, and iterate them to vuild the site
+        //Check If Dyme found any water sites, and iterate them to build the site
         sites = 0
-        painted = []
+        
         waterdisplay[mutantID] = {}
+
+
+        //Decide which waters to show
+        //Object.entries(watersites["water_ids"]["anchor_contacts"]).forEach(function([atomid, watersite]){
+        //    involved_waters = watersite["waters"]
+        //    console.log(watersite["residue"])
+        //    involved_waters.forEach(function(watid){
+        //        perc = watersites["water_ids"]["important_waters"][watid]["residence_percentage"]
+        //        if(perc >=5){
+        //          console.log(perc)
+        //        }
+        //    })
+        //})
+
+
+
 
         if(Object.keys(watersites["water_ids"]["anchor_contacts"]).length > 0) {
             Object.entries(watersites["water_ids"]["anchor_contacts"]).forEach(function([atomid, watersite]){ //atomid is the residue, not the water
                 //Vars for the site to display
                 
                 if(watersite["watersite_centroid"] != undefined){ //If project has centroids calculated (needs new scavengeer)
+
+                    //Limit display options to threshold
+                    painted = []
                     if(atomid != undefined){
-                        //console.log(atomid)
+                        console.log(atomid)
                         accum_residence = 0
                         label1 = ""
                         residue_name = watersite["residue"] //Atom at the residue near water
@@ -2175,21 +2302,25 @@ function loadNGLViewer(canvas, response){
                                 watpercent = watersites["water_ids"]["important_waters"][watid]["residence_percentage"] //For labeling
                                 watres     = watersites["water_ids"]["important_waters"][watid]["residue"] //For future display
                                 watframes  = watersites["water_ids"]["important_waters"][watid]["frames"] //For future display
+                                    if(watpercent >= 5 ){ //Only grab waters better than 5% residence
                                 accum_residence +=watpercent
                                 painted.push(watid)
                                 addthisone = true                            
-                            } 
+ 
                             waterdisplay[mutantID][residue_name]["waters"].push(watid)
                             waterdisplay[mutantID][residue_name]["residence"].push(watersites["water_ids"]["important_waters"][watid]["residence_percentage"])
+                                    }
+                            } 
                         })
                         
-                        if(addthisone){
+                        if(addthisone && accum_residence > 5){ //Limit residence to 5% (all waters) and upper
                             //console.log(involved_waters)
                             sites +=1                        
                             //console.log(label1+" "+accum_residence)
                             spherePositions1.push({ position: centroid, label: `Site ${sites} (${accum_residence}%)`, resident: accum_residence})
                         }
-                        waterdisplay[mutantID]['sites'] = sites
+                        waterdisplay[mutantID]['sites'] = sites     
+                        
                     }
                 }
 
@@ -2205,7 +2336,7 @@ function loadNGLViewer(canvas, response){
         spherePositions1.forEach(function(item) {
             var shape = new NGL.Shape('highlight');
             col = hexToRgbA(color.color.slice(0,-2), 1.0).match(/\d+/g).slice(0, 3).map(num => parseInt(num) / 255)
-            shape.addSphere(item.position, col, 2.0*(item.resident/100), 'sphere');
+            shape.addSphere(item.position, col, 2.5*(item.resident/100), "Water "+item.label+" (Mutant "+mutantID+")");
             shape.addText(item.position, [0,0,0], 1, item.label, col);
             var shapecomp = stage.addComponentFromObject(shape);
 
@@ -2275,8 +2406,64 @@ function loadNGLViewer(canvas, response){
     box = canvas.width();
     canvas.css({"width:": box+"px", "height": box+"px", "overflow": ""});
     stage.handleResize();
+    
     molStructure = stage
 }
+
+
+
+//Create fake contact using NGL, to display desired cpptraj contacts
+function  manualHbond(mutantID, sel1, sel2, name="") {
+  // Resolve atom indices
+  comp = groupsNGL[mutantID].molecule;
+  const idx1 = comp.structure.getAtomIndices(new NGL.Selection(sel1))[0]; //i.e. 620 and .OP1 (this is how the exact atom is reached)
+  const idx2 = comp.structure.getAtomIndices(new NGL.Selection(sel2))[0];
+  if (idx1 === undefined || idx2 === undefined) return;
+
+  // Get positions
+  const a1 = comp.structure.getAtomProxy(); a1.index = idx1;
+  const a2 = comp.structure.getAtomProxy(); a2.index = idx2;
+  const pos1 = a1.positionToArray();
+  const pos2 = a2.positionToArray();
+
+  // Create shape and add cylinder
+  const shape = new NGL.Shape("manual-hbond");
+  shape.addCylinder(pos1, pos2, [0.6, 0.8, 1.0], 0.15, "Contact "+name);
+
+  // Display in viewer
+  
+  const shapeComp = stage.addComponentFromObject(shape);
+  var contactRepresentation = shapeComp.addRepresentation("buffer");
+  groupsNGL[mutantID].contactsRep.push(contactRepresentation);
+  
+}
+
+//Extract and show contacts: For future use - PEDRO NOV 2025
+function drawContacts(mutantID){
+    mutantObjects.forEach(function(mutant){
+    if(mutant.mutantID == mutantID){
+        contacts = mutant[dict_cpptraj_index+contactThreshold]
+        Object.keys(contacts).forEach(function(origin){
+            res1 = parseInt(origin.replace(/\D/g, ""), 10);
+            contacts[origin].forEach(function(destination) {
+                destname  = Object.keys(destination)[0]
+                console.log(destname)
+                destname2 = destname.replace(/\D/g, "") 
+                atoms    = destination[destname]
+                res2     = parseInt(destname.replace(/\D/g, ""), 10);
+
+                atom1 = atoms.split("_")[0].split("-")[0]
+                atom2 = atoms.split("_")[1].split("-")[0]
+                
+                str1 = res1+" and ."+atom1
+                str2 = res2+" and ."+atom2
+                manualHbond(mutantID, str1, str2, origin+ " to "+ destname2)
+            })
+        })
+    }})
+}
+
+
 
 //NGL Tools
 function exportStage(){
@@ -2307,40 +2494,209 @@ function resetZoom(element){
     }
 }
 
+function open_directory(){
+    window.open("file://"+path_to_project, "_blank", "width=800,height=600,resizable=yes,scrollbars=yes");
+}
+
+//Exports all molecules in session to combined PDB file
+async function exportPDB(opts = {}) {
+
+   const {
+    filename = "all_mutants_transformed.pdb",
+    onlyVisible = false,
+    includeRemarks = true
+  } = opts;
+
+  if (!stage || !stage.viewer) {
+    console.error("NGL stage not found");
+    return;
+  }
+
+  const rpad = (s, n, ch=" ") => (s+"").padEnd(n, ch).slice(0, n);
+  const lpad = (s, n, ch=" ") => (s+"").padStart(n, ch).slice(-n);
+
+  function formatAtomName(atomName="", element="") {
+    const e = (element||"").trim().toUpperCase();
+    const name = (atomName||"").trim();
+    return (e.length === 1) ? rpad(name, 4) : lpad(name, 4);
+  }
+
+  function formatATOM({
+    serial, het, atomName, altloc, resname, chainname, resno, inscode,
+    x, y, z, occupancy=1.00, bfactor=0.00, element
+  }) {
+    const rec = het ? "HETATM" : "ATOM  ";
+    return (
+      rec +
+      lpad(serial, 5) + " " +
+      formatAtomName(atomName, element) +
+      (altloc ? altloc[0] : " ") +
+      lpad((resname||"").toUpperCase().slice(0,3), 3) + " " +
+      (chainname ? chainname[0] : " ") +
+      lpad(resno ?? 1, 4) +
+      (inscode ? inscode[0] : " ") + "   " +
+      lpad(x.toFixed(3), 8) +
+      lpad(y.toFixed(3), 8) +
+      lpad(z.toFixed(3), 8) +
+      lpad(occupancy.toFixed(2), 6) +
+      lpad(bfactor.toFixed(2), 6) +
+      "          " +
+      lpad((element||"").toUpperCase().slice(-2), 2)
+    );
+  }
+
+  // Column-major matrix × [x y z 1]^T
+  function applyMat4(x, y, z, M) {
+    const e = M?.elements || M;
+    if (!e || e.length !== 16) return { x, y, z };
+    return {
+      x: e[0]*x + e[4]*y + e[8]*z + e[12],
+      y: e[1]*x + e[5]*y + e[9]*z + e[13],
+      z: e[2]*x + e[6]*y + e[10]*z + e[14],
+    };
+  }
+
+  // Collect components
+  const comps = [];
+  stage.eachComponent(c => {
+    if (!c.structure) return;
+    if (onlyVisible && !c.visible) return;
+    comps.push(c);
+  });
+
+  if (!comps.length) {
+    console.warn("No structure components to export.");
+    return;
+  }
+
+  // Build the entire PDB content
+  let out = "";
+  if (includeRemarks) {
+    out += "REMARK  100 Generated by exportTransformedPDBWithNames(): matrices applied\n";
+    out += "REMARK  100 Each MODEL carries a TITLE with the mutantID\n";
+  }
+
+  let globalSerial = 1;
+  let modelIndex = 1;
+
+  for (const comp of comps) {
+    const compName = (comp.name && String(comp.name).trim()) || `MODEL_${modelIndex}`;
+    const M = comp.matrix && comp.matrix.elements ? comp.matrix : { elements: [
+      1,0,0,0,
+      0,1,0,0,
+      0,0,1,0,
+      0,0,0,1
+    ]};
+
+    out += `MODEL        ${String(modelIndex)}\n`;
+    out += `TITLE     ${compName}\n`;
+    out += `REMARK  100 NAME: ${compName}\n`;
+
+    let prevChain = null;
+
+    comp.structure.eachAtom(atom => {
+      const chain = atom.chainname || "";
+      if (prevChain !== null && chain !== prevChain) out += "TER\n";
+      prevChain = chain;
+
+      const p = applyMat4(atom.x, atom.y, atom.z, M);
+
+      out += formatATOM({
+        serial: globalSerial++,
+        het: atom.isHetero,
+        atomName: atom.atomname || atom.element || "X",
+        altloc: atom.altloc || " ",
+        resname: atom.resname || "UNK",
+        chainname: chain || "A",
+        resno: atom.resno ?? 1,
+        inscode: atom.inscode || " ",
+        x: p.x, y: p.y, z: p.z,
+        occupancy: Number.isFinite(atom.occupancy) ? atom.occupancy : 1.00,
+        bfactor: Number.isFinite(atom.bfactor) ? atom.bfactor : 0.00,
+        element: atom.element || (atom.atomname ? atom.atomname[0] : "X")
+      }) + "\n";
+    });
+
+    out += "ENDMDL\n";
+    modelIndex++;
+  }
+
+  out += "END\n";
+
+  // 🔹 Same CSV-like download method (no Blob, no URL.createObjectURL)
+  const data = "data:text/plain;charset=utf-8," + encodeURIComponent(out);
+  const link = document.createElement("a");
+  link.setAttribute("href", data);
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);  
+}
+
+
+
+
+
+
 //Some button Tools
-function exportPNG(element){
+async function exportPNG(element){
     var id = $("#idproject").val()
+
     switch(element){
         case "rmsd":
-            var image = rmsd_chart.toBase64Image();
+            //var image = rmsd_chart.toBase64Image();
+            var divname = '#rmsdPNG'
             var name = 'RMSD_DYME_project'+id+'.png';
         break;
         case "perresidue":
-            var image = energy_chart.toBase64Image();
+            //var image = energy_chart.toBase64Image();
+            var divname = '#perresiduePNG'            
             var name = 'PERRESIDUE_DYME_project'+id+'.png';
         break;
         case "pairwise":
-            var image = pairwise_chart.toBase64Image();
+            //var image = pairwise_chart.toBase64Image();
+            var divname = '#pairwisePNG'
             var name = 'PAIRWISE_DYME_project'+id+'.png';
         break;
         case "energy":
-            html2canvas($('#sequenceholder'), {
-                onrendered: function(canvas1) {
-                    document.body.appendChild(canvas1)
-                }
-              });
-
-            var name = 'SEQUENCE-BY-ENERGY_DYME_project'+id+'.png';
-            return
+            var divname = '#sequenceHolderAll'
+            name  = `SEQUENCE-BY-ENERGY_DYME_project${id}.png`;
         break;
+        case "contact": 
+            var divname = '#contactPNG'
+            name  = `CONTACT_EXPLORER_DYME_project${id}.png`;
+        break;
+         case "3D": 
+            var divname = '#explorerPNG'
+            name  = `CONTACT_EXPLORER_DYME_project${id}.png`;
+        break;
+        
     }   
 
-   
-    var a  = document.createElement('a');
-    a.href = image;
-    a.download = name
+     el = document.querySelector(divname);
+
+     const image = await htmlToImage.toPng(el, {
+        pixelRatio: 2,       // like scale
+        cacheBust: true,     // avoids stale images
+        backgroundColor: '#fff' // keep transparency; set to '#fff' if you want white
+     });
+
+        
+        //var ecanvas = await html2canvas(el, { scale: 2, useCORS: true, allowTaint: false });
+
+        //image = ecanvas.toDataURL('image/png');
+
+   try {
+        var a = document.createElement('a');
+        a.href = image;       // Make sure "image" is a valid base64 string or URL
+        a.download = name;    // Filename
+        document.body.appendChild(a); // Best practice: append before clicking
     a.click();
     document.body.removeChild(a);
+        console.log("Download started successfully.");
+    } catch (error) {
+        console.error("Failed to trigger download:", error);
+    }
 }
 
 //Some button Tools
@@ -2383,14 +2739,15 @@ function convertChartDataToCSV(args) {
       return null;
     }
 
-    label = args.label
-    columnDelimiter = args.columnDelimiter || ',';
+    var label = args.label;
+    columnDelimiter = args.columnDelimiter || ';';
     lineDelimiter   = args.lineDelimiter || '\n';
   
-    keys = Object.keys(data[0]);
+    // Filter out unwanted keys
+    keys = Object.keys(data[0]).filter(key => !["v", "mutations", "y2"].includes(key));
   
     result = '';
-    result += label+lineDelimiter
+    result += label + lineDelimiter;
     result += keys.join(columnDelimiter);
     result += lineDelimiter;
   
@@ -2403,9 +2760,9 @@ function convertChartDataToCSV(args) {
       });
       result += lineDelimiter;
     });
+
     return result;
   }
-  
 //Download CSV Feature
 function downloadCSV(args) {
     var data, filename, link;
@@ -2436,13 +2793,26 @@ function downloadCSV(args) {
 
 // Launch a VMD xdg-open command
 // requires registering the app:// protocol on the user's OS
-function launchVMD(comp, res){
-    a = document.createElement('A');
+function launchVMD(comp, res, file, mutid){
+
+    var a = document.createElement('A');
     a.href = encodeURI(res);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     setTimeout(function(){ $('#modalVMD').modal('hide')}, 1000);
+
+    // Create a blob from the file content
+    const blob = new Blob([file], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    // Create a temporary <a> element to trigger download
+    a = document.createElement("a");
+    a.href = url;
+    a.download = "vmd_mutant_"+mutid+".vmd"
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
 }
 
 
@@ -2531,7 +2901,7 @@ function renderHbondsTable(comp,res){
     
     var mutarray   = mutantList["proc"]
     console.log("Response from hbondApiTable")
-    console.log(res)
+    //console.log(res)
     //Push Incoming mutant into the contact array
     if(res != ""){
         mutantObjects.push(res)     
@@ -2601,12 +2971,12 @@ function renderHbondsTable(comp,res){
 
 
     var mutantID
-    
+    allcppcontacts = []
     for(i=0;i<=mutantObjects.length-1;i++){
         //console.log(i)
         
         mutantID = mutantObjects[i]["name"]
-        
+        allcppcontacts[mutantID] = [];
         if(mutantID.includes(filterByName) || (i == indexwt)){
             //Create header for Wildtype and the rest. Just override Wt for MutantID 1
             console.log("Plotting mutant "+mutantID)
@@ -2700,11 +3070,10 @@ function renderHbondsTable(comp,res){
                 tooltip = `MutantID: ${tit} &#013;Res.Contacts: ${contactlist.length} &#013;&#013;HBond: ${hbond} | VdW: ${vdw} &#013;Backbone: ${bb} | ${sidechainstring}: ${ss}`
                 //Paint Cell
                 $("#"+pos).append("<td title='"+tooltip+"' href='#' id='"+pos+"_"+i+"' onclick='showAtomContent(\""+pos+"__"+i+"__"+mutantID+"\")' class='"+color+"'>"+contactlist.length+"</td>")
-                
             })
             //Add last row with energy of this mutantID
             mutantID = mutantObjects[i]["mutantID"]
-            console.log("llegue aqui "+mutantID)
+            //console.log("llegue aqui "+mutantID)
             a  = mutarray.find(o => o.mutantID === mutantID);
             
             dg = Math.round(a.deltag_total * 10)/10
@@ -2715,6 +3084,7 @@ function renderHbondsTable(comp,res){
     
 
 }
+
 
 /////////////////////////////////////////////////////////
 //Helper Functions for Hbonds Table
@@ -2742,7 +3112,7 @@ function showAtomContent(posmut){
                 type="hbond"
             }
 
-            //check if contact is with backbone or sidechain/ring
+            //check if contat is with backbone or sidechain/ring
             if (isBackbone(orig, dest)){
                 with1="Backbone"
             } else {
@@ -2760,9 +3130,9 @@ function showAtomContent(posmut){
                 atomlists[targetamino][orig] = [{'atom': dest,  'type': type, 'with': with1}]
             }
         })
-         
     })
 
+    
     //Build HTML
     //console.log(atomlists)
     //Convert pos to mutation in pos
@@ -2801,6 +3171,7 @@ function showAtomContent(posmut){
     $(idaccordeon).html(container)
 }
 
+
 //Classifies a bond in vdw or hbond
 //Classifies a bond in vdw or hbond
 function isVdW(a1,a2){
@@ -2809,8 +3180,6 @@ function isVdW(a1,a2){
         if((a1.includes(atom)) || (a2.includes(atom))){
             toBeReturned = true
         }
-
-
     })
     return toBeReturned
 }
@@ -2821,8 +3190,9 @@ function isBackbone(a1, a2){
     var toBeReturned=true;
     sideChainAtoms.forEach(function(atom){
         if((a1.includes(atom)) || (a2.includes(atom))){
-            toBeReturned = false
+            toBeReturned = false;
         } 
+
         //if((a1.length == 1) || a2.length == 1){
         //    if( (a1 == "N") || (a2 == "N")  ) {
         //        toBeReturned = true
@@ -2928,10 +3298,12 @@ function renderFilterOptions(){
     labclass = "float-start"
     //Create a dropdown per anchorpoint with their corresponding mutable combos
     Object.entries(residuemap).forEach(function(res){
+            //console.log(res)
             selector = ""
             res[1].forEach(function(chain){
                 if(chain !== null){
                     if(chain["isanchor"]){
+                        console.log(chain)
                         pos  = chain["resno_NGL"]
                         pdb  = chain["resno_PDB"]
                         opts = chain["mutable_into"]
@@ -2940,9 +3312,18 @@ function renderFilterOptions(){
                         //elem.push({"id": pos, "pos": nom+pos, "res": opts})
                         selector = `<label class='${labclass}' for="f_${pos}">${nom+pdb}</label>&nbsp;&nbsp; <select class="${classs}" id='f_${pos}' name='f_${pos}' onchange='addcriteria(this, "${pos}", "${nom}", "${ch}", "${pdb}")'>`
                         o = "<option value='0'>Add..</option>"
+                        console.log(opts)
+                        if (Object.keys(opts).length !== 0) {
                         opts.forEach(function(a){
                             o = o+`<option value='${a}'>${a}</option>`
                         })
+                        } else {
+                            standard_residues.forEach(function(a){
+                                o = o+`<option value='${a}'>${a}</option>`
+                            })
+                        }
+                        
+
                         selectors = selectors+selector+o+"</select><br>"
                     }
                 }  

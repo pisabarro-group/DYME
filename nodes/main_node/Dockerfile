@@ -204,7 +204,7 @@ RUN chown -R www-data:www-data /dyme_root/projects
 RUN chmod -R 775 /dyme_root/projects
 
 WORKDIR /
-RUN a2enmod wsgi
+#RUN a2enmod wsgi
 RUN a2enmod rewrite
 
 #########################################################################################################################

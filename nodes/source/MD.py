@@ -104,7 +104,7 @@ class MD():
         "totalframes": ""
     }        
     
-    def __init__(self, dbhostname):
+    def __init__(self, dbhostname, reusegpus):
         
         #DB object comes from Node.Node
         #AMPQ object comes from Node.Node
@@ -115,6 +115,7 @@ class MD():
         self.node_type   = "MD"    #type of Node
         self.lictoken    = ""    #License
         self.status      = "booting"    #Status of node        
+        self.reusegpus   = reusegpus
         self.gpus        = self.get_free_gpus() #TODO- Detect if Server doesn't have GPUs, and exit if so
         #Check if system has GPUs for MD
         if len(self.gpus) == 0:
@@ -304,9 +305,7 @@ class MD():
                  
     
     def runMD_fromAmber(self, md_params, deviceindex, dbhostname):
-        #MD_PARAMS template is stored in class variable
-        #MAYBE CONNECT EVERYTHING TO /superfast of pcpu2? (you did so.. mar 7 2023)
-        
+        #MD_PARAMS template is stored in a class variable       
         #sys.stdout = open(str(os.getpid()) + ".out", "w")
         try:
             import time
@@ -343,7 +342,7 @@ class MD():
                 #platformProperties = {'Precision': 'single', "DeviceIndex": str(deviceindex)}
                 platformProperties = {'Precision': str(md_params['precision']), "DeviceIndex": str(deviceindex)} 
             else:
-                #This is for supporting AMD and CPU in the future
+                #This is for supporting AMD and CPU in the future... not super tested tho
                 pass    
             
             print("Loading MD File Inputs")
@@ -480,7 +479,7 @@ class MD():
             simulation.step(int(md_params["steps"])) #Run 
 
             #UPDATE DATABASE STATUS to "ready_to_scavenge" 
-            from DymeDB import DymeDB
+            from DymeDB import DymeDB #spawn again.. after simulation the connection is probably dead, and keepalives don't work
             from datetime import datetime
             db = DymeDB(dbhostname) #New mongodb instance.. from the fork..
             
@@ -506,7 +505,7 @@ class MD():
             from DymeDB import DymeDB
             from datetime import datetime
             db = DymeDB(dbhostname) #New mongodb instance.. from the fork..
-            
+            #UPDATE MUTANT RECORD STATUS CODE BACK TO PENDING... WILL BE PICKED UP AGAIN
             q = {'id_project': project_id, 'mutantID': mutantID}
             newvalues = {"$set": { 'status': 'pending', "status_vars.md_date_end": datetime.now()}}    
             db.dbtable_mutants.update_one(q, newvalues)
@@ -557,7 +556,7 @@ class MD():
             for row in output.strip().split("\n")[1:])
     
         # Store GPU usage information for each GPU
-        gpu_usage = {gpu_id: {"used": 0, "used_by_others": 0, "total": int(total)}
+        gpu_usage = {gpu_id: {"used": 0, "used_by_others": 0, "total": int(total), "runningone": False}
             for gpu_id, total in total_memory.items()}
     
         # Use nvidia-smi to get GPU memory usage of each process
@@ -568,7 +567,7 @@ class MD():
     
             #gpu_id, pid, type, mb, command = row.split('')
             cols   = list(filter(None, re.split(r'\s{2}', row)))
-            print("Row length: "+str(len(cols)))
+            print("Row length: "+str(len(cols))) #This changes with nvidia driver versions.. could break soon
             print(cols)
             if len(cols) == 5:
              gpu_id, pid, type, mb, command = cols
@@ -583,6 +582,12 @@ class MD():
             if pid == "-": continue
             if(mb == " -"):
                 mb = 0
+            
+            #If user wants to launch on a busy GPU (his problem), we fake usage to 0 - PEDRO March 2026
+            if  self.reusegpus:
+                mb = 0
+                
+
             gpu_usage[gpu_id]["used"] += int(mb)
     
             # If the GPU user is different from us
@@ -604,14 +609,20 @@ class MD():
         """
         return [gpu_id for gpu_id, usage in self.get_gpu_usage().items() if usage["used"] < max_usage_by_others_mb]
 
+
 if __name__ == "__main__":
-    print("Dynamic Mutagenesis Engine(DyME) v1.0 - MD Node Agent")
+    import argparse
+
+    print("Dynamic Mutagenesis Engine(DyME) v1.0 - MD Worker Node")
     print("Pedro M. Guillem-Gloria <pedro_manuel.guillem_gloria@tu-dresden.de>, Structural Bioinformtics - TU Dresden, Germany")
     print("")
-    parser = argparse.ArgumentParser(description="DyME - MD Node Agent v.1.0")
-    parser.add_argument('-d', "--dbhost", type=str, help="Hostname or IP Address of the Main Node Docker instance", required=True)
+
+    parser = argparse.ArgumentParser(description="DyME - MD Worker Node  v.1.0")
+    parser.add_argument('-d', "--dbhost", type=str, help="Hostname or IP Address of the Main Node instance", required=True)
+    parser.add_argument('-u', "--reusegpus", action="store_true",
+                        help="Use GPU cards even if they are busy")
     args = vars(parser.parse_args())
-    
+
     if len(args["dbhost"]) < 2 or args["dbhost"] == "localhost":
         print("-------------------------------------------------------------------------------")
         print("No Hostname or IP address provided... assuming 'localhost' (127.0.0.1)")
@@ -619,10 +630,10 @@ if __name__ == "__main__":
         hostname = "localhost"
     else:
         hostname = args["dbhost"]
-    
-    node = MD(hostname) 
+
+    reusegpus = args["reusegpus"]
+
+    node = MD(hostname, reusegpus)
     print("Booting up template Dyme MD node")
+    
     node.run()
-    #print(json.dumps(get_gpu_usage(), indent=4))
-    #print()
-    #print("GPU ids of free GPUs:", get_free_gpus())

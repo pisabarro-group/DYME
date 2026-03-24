@@ -277,10 +277,10 @@ download_tar() {
 
     #UPDATE PROJECT FOLDERS IN INTERNAL DB TO MATCH DYME_PATH
     docker exec dyme_main mongosh dyme --eval \
-    'db.projects.updateOne({id_project: 49}, {$set: {project_folder: '/dyme_root/projects/49"}})'
+    'db.projects.updateOne({id_project: 49}, {$set: {project_folder: "/dyme_root/projects/49"}})'
 
     docker exec dyme_main mongosh dyme --eval \
-    'db.projects.updateOne({id_project: 50}, {$set: {project_folder: '/dyme_root/projects/50"}})'
+    'db.projects.updateOne({id_project: 50}, {$set: {project_folder: "/dyme_root/projects/50"}})'
 
     echo "Test Data - Load Complete :)"
     echo "---------------------------------------------------"

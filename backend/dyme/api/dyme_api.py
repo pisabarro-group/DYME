@@ -562,7 +562,7 @@ def WizzardStep4():
             "clusters": newproject['clusters'],
             "analysis": newproject['analysis'],
             "simulation": newproject['simulation'],
-            "residuemap" : newproject['residuemap']
+            "residuemap" : newproject['residuemap'],
     }
     
     project["inputs"]["leapSources"] = session["leap_files"]
@@ -1920,15 +1920,18 @@ def launchVMD():
     if os.path.isfile(trajectory_nc): 
        os.remove(trajectory_nc)
         
+    import mdtraj as md
     print('Creating NC format from the original HDF5 trajectory in Project Dir!')
+    print(trajectory_h5)
     traj = md.load(trajectory_h5)
-    
+    print('Imaging molecules')
     traj.image_molecules(inplace=True)
     # 2. Center coordinates (move system to origin, solvent included)
     traj.center_coordinates()
     # 3. Align entire system to the first frame (solvent + protein)
     traj.superpose(traj, frame=0)        
-    
+
+    print('Saving a NetCFD copy of the file')
     traj.save_netcdf(trajectory_nc)
     traj = None
     #BETTER WITH MDTRAJ...
@@ -1942,12 +1945,17 @@ def launchVMD():
     #3. Return to site and launch xdg-open
     #TODO: Make VMD path come from settings
     link = f"app:///group/bioinfp_apps/vmd/bin/vmd -e {loader}"
+
+    with open(loader, "r", encoding="utf-8") as f:
+     content = f.read()
     
     #The mutant has no important waters in the interface
     res = {
            "action": "launch_vmd_external",
            "component": "loadingVMDmodal",
-           "response": link
+           "response": link,
+           "content": content,
+           "mutantidvmd": mutantID
           }
     
     return res

@@ -38,7 +38,7 @@ case "$NODETYPE" in
   MD)
     echo "Starting MD.py with dbhost: $DBHOST"
     init_conda
-    exec python /dyme_base/backend/dyme/MD.py -d "$DBHOST"
+    exec python /dyme_base/backend/dyme/MD.py -d "$DBHOST" "$PROJ"
     ;;
   *)
     echo "Unknown nodetype: $NODETYPE. Expected 'scavenger' or 'MD'."

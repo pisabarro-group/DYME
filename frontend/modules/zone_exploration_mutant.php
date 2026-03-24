@@ -203,7 +203,7 @@ echo "<input type='hidden' value='$id_project' name='idproject' id='idproject'>"
                 </div>
 
 
-                <div class="card-footer small text-muted">Export to Excel</div>
+                
             </div>    
         <!--FINISH Left Half-->
         </div>
@@ -382,7 +382,7 @@ echo "<input type='hidden' value='$id_project' name='idproject' id='idproject'>"
 
 
                     </div>
-                    <div class="card-footer small text-muted">Download to XLSX</div>
+                    
                 </div>
         <!--FINISH Right Half-->
         </div> 
@@ -518,7 +518,7 @@ echo "<input type='hidden' value='$id_project' name='idproject' id='idproject'>"
       </div>
       <div class="modal-body">
             <div class="justify-content-center d-flex">
-            Use the dropdowns to add mutations to the filter criteria:
+                Use the dropdowns to add mutations to the filter criteria:
             </div>
             <br>
             <div class="justify-content-center  d-flex align-top">
@@ -530,7 +530,7 @@ echo "<input type='hidden' value='$id_project' name='idproject' id='idproject'>"
                     </div>
                 </div>
                 <div class="card flex-end">
-                    <div class="card-body">   
+                    <div class="card-body">    
                         Filter Criteria    
                         <div class="text-center" id="anchorpointlist_criterias"> 
                             

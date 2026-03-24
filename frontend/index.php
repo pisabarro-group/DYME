@@ -273,7 +273,7 @@ if($_GET["s"] == "mainproject" || $_GET["s"] == "mainproject_rest"){
                                         <a class="nav-link <?php if ($_GET['zone']=='exploration_mutant') echo 'active'?>" href="index.php?s=mainproject&id=<?=$id_project?>&zone=exploration_mutant">Mutant Explorer</a>
                                         <!--<a class="nav-link <?php if ($_GET['zone']=='refinement_mutant') echo 'active'?>" href="index.php?s=mainproject&id=<?=$id_project?>&zone=refinement_mutant">Mutant Refinery</a>-->
                                         <a class="nav-link <?php if ($_GET['zone']=='specificity_finder') echo 'active'?>" href="index.php?s=mainproject&id=<?=$id_project?>&zone=specificity_finder">Specificity Finder</a>
-                                        <a class="nav-link <?php if ($_GET['zone']=='correlation_finder') echo 'active'?>" href="index.php?s=mainproject&id=<?=$id_project?>&zone=correlation_finder">Assisted Predictor</a>
+                                        
                                         <!--<a class="nav-link <?php if ($_GET['zone']=='cluster_factory') echo 'active'?>" href="index.php?s=mainproject&id=<?=$id_project?>&zone=cluster_factory">Re-clustering</a>-->
                                     </nav>
                                 </div>
