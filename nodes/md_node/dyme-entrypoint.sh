@@ -20,7 +20,7 @@ init_conda() {
 }
 
 if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <nodetype [MD or scavenger]> <dbhost>"
+  echo "Usage: $0 <nodetype [MD or scavenger]> <dbhost> <projectID> <mutantID>"
   exit 1
 fi
 
