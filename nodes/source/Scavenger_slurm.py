@@ -1,33 +1,11 @@
-# -*- coding: utf-8 -*-
-"""
-DYME - Dynamic Mutagenesis Engine v0.1
-
-File:           Scavenger_slurm.py
-Description:    Mutagenesis Generator Class
-
-Purpose:        -Provides functions to scavenge data from trajectories
-                 This version of the scavenger deploys pending jobs using the SLURM workload manager 
-
-Provides:       -class Scavenger()
-
-Author:     
-Pedro Manuel Guillem Gloria <pedro_manuel.guillem_gloria@tu-dresden.de>
-Structural Bioinformatics Laboratory - BIOTEC - Pisabarro Group
-Technische Universität Dresden
-
-Mar 2023 - Built the whole thing... >)
-May 2023 - We have issues with failing file handles when the process queue is too long. Opt for slurm... I Need more time to figure out this one.
-May 2023 - Built this version of the Scavenger... runs once.. we deploy to slurm
-
-"""
-
 #import mdanalysis as mda
 import mdtraj as md
 import parmed as parm
 
 import sys
 import os
-from multiprocessing import Pool, current_process, cpu_count, Process, Queue
+from multiprocessing import Pool
+from pymongo import ReturnDocument
 import psutil as ps
 import subprocess
 #import json
@@ -36,7 +14,6 @@ from ast import literal_eval
 import argparse
 #import uuid
 from socket import gethostname
-import time
 
 
 #File monitoring libs
@@ -48,17 +25,264 @@ import Node #Includes Database Access Functions
 from DymeTools import InputSystem, MMGBSA, WaterMapper, Contacts
 from DymeDB import DymeDB
 
+
+def get_available_cpus():
+    slurm_cpt = os.environ.get("SLURM_CPUS_PER_TASK")
+    slurm_ntasks = os.environ.get("SLURM_NTASKS")
+
+    affinity_cpus = None
+    if hasattr(os, "sched_getaffinity"):
+        try:
+            affinity_cpus = len(os.sched_getaffinity(0))
+        except Exception:
+            affinity_cpus = None
+
+    if slurm_cpt and slurm_ntasks:
+        slurm_total = int(slurm_cpt) * int(slurm_ntasks)
+        return min(affinity_cpus, slurm_total) if affinity_cpus else slurm_total
+
+    if slurm_cpt:
+        return min(affinity_cpus, int(slurm_cpt)) if affinity_cpus else int(slurm_cpt)
+
+    return affinity_cpus or (os.cpu_count() or 1)
+
+
+def get_mutant_dirs(default_settings, mutID, projID):
+    dirs = {}
+    base_path = default_settings["hdd_path"] + default_settings["project_dir"] + "/" + str(projID)
+
+    dirs["mutant"]  = f'{base_path}/mutants/{mutID}/'
+    dirs["inputs"]  = f'{base_path}/mutants/{mutID}/inputs/'
+    dirs["outputs"] = f'{base_path}/mutants/{mutID}/outputs/'
+    dirs["ramdisk_in"]  = f'/mnt/ramdisk/{projID}/mutants/{mutID}/inputs/'
+    dirs["ramdisk_out"] = f'/mnt/ramdisk/{projID}/mutants/{mutID}/outputs/'
+
+    if not os.path.exists(dirs["ramdisk_in"]):
+        os.makedirs(dirs["ramdisk_in"], exist_ok=True)
+
+    if not os.path.exists(dirs["ramdisk_out"]):
+        os.makedirs(dirs["ramdisk_out"], exist_ok=True)
+
+    return dirs
+
+
+def compute_energies_worker(args):
+    import gc
+    import shutil
+    from datetime import datetime
+
+    mutantID, projectID, dbhost, hostname, cpus_per_energyprocess, output_md = args
+
+    db = DymeDB(dbhost)
+    default_settings = db.select_document("default_settings", {})
+    project = db.select_document("projects", {"id_project": projectID})
+    paths = get_mutant_dirs(default_settings, mutantID, projectID)
+
+    q = {'id_project': int(projectID), 'mutantID': int(mutantID)}
+    timestart = int(time.time())
+    workdir = None
+
+    try:
+        if "igb" in project["inputs"]:
+            igbVal = project["inputs"]["igb"]
+        else:
+            igbVal = 2
+
+        if "inp" in project["inputs"]:
+            inpVal = project["inputs"]["inp"]
+        else:
+            inpVal = 1
+
+        energ = "energy_gbsa"
+        if "energy_pbsa" in project["analysis"]:
+            energ = "energy_pbsa"
+
+        pid = MMGBSA(
+            mutantID=int(mutantID),
+            outPath=paths["mutant"],
+            interval=30,
+            igb=igbVal,
+            inp=inpVal,
+            compute_mode=energ
+        )
+
+        pid.setRamDisk(paths["ramdisk_in"], paths["ramdisk_out"])
+        pid.makeInputs()
+        pid.writeInputs()
+        codes = pid.launchCodes(cpus_per_energyprocess)
+
+        newvalues = {"$set": {
+            'status': 'scavenging_GBSA_pairwise',
+            "status_vars.scavenger_node": hostname,
+            "status_vars.scavenger_start_time": datetime.now(),
+            "status_vars.scavenger_start_time_seconds": timestart,
+            "status_vars.scavenger_progress_percentage": 0
+        }}
+        db.dbtable_mutants.update_one(q, newvalues)
+
+        pid.genNCtrajectory(paths["mutant"])
+
+        print("Running pairwise GBSA calculation on mutant " + str(mutantID), flush=True)
+        cmd = codes["pairwise"]
+        print(f'########\n Executing launch code:\n {cmd} \n####################')
+        p = subprocess.Popen([f'{cmd}'], cwd=paths["ramdisk_in"], stdout=subprocess.PIPE, bufsize=2048, shell=True, executable='/bin/bash')
+        print("Waiting for Pairwise process to complete")
+        p.communicate()
+        time.sleep(1)
+
+        timenow = int(time.time()) - timestart
+        newvalues = {"$set": {
+            'status': 'scavenging_GBSA_perresidue',
+            "status_vars.scavenger_elapsed": timenow,
+            "status_vars.scavenger_progress_percentage": 40
+        }}
+        db.dbtable_mutants.update_one(q, newvalues)
+
+        print("Launching per-residue energies now!")
+        cmd = codes["perresidue"]
+        print(f'########\n Executing launch code:\n {cmd} \n####################')
+        p = subprocess.Popen([f'{cmd}'], cwd=paths["ramdisk_in"], stdout=subprocess.PIPE, bufsize=2048, shell=True, executable='/bin/bash')
+        print("Waiting for Per-residue process to complete")
+        p.communicate()
+        time.sleep(1)
+
+        print("##########FINISHED MMPBSA FOR Mutant " + str(mutantID) + " #############")
+        time.sleep(2)
+
+        anchorpoints = []
+        for cluster in project["clusters"]:
+            if cluster is not None:
+                anchorpoints += cluster
+
+        timenow = int(time.time()) - timestart
+        newvalues = {"$set": {
+            'status': 'scavenging_deltas_table',
+            "status_vars.scavenger_elapsed": timenow,
+            "status_vars.scavenger_progress_percentage": 80
+        }}
+        db.dbtable_mutants.update_one(q, newvalues)
+
+        print("Collecting DeltaGs from MMPBSA outputs")
+        delta_g = pid.parse_deltaG()
+        gc.collect()
+
+        print("Collecting Perrresidue data")
+        perresidue = pid.parse_Perresidue()
+        gc.collect()
+
+        print("Collecting pairwise data")
+        pairwise = pid.parse_Pairwise(anchorpoints)
+        gc.collect()
+
+        print("Collecting Best Frame")
+        bestframe = pid.parse_BestFrame()
+        gc.collect()
+
+        print("Computing RMSD Data")
+        rmsd = pid.parse_RMSD()
+        gc.collect()
+
+        workdir = pid.ramdisk_out
+        del pid
+        gc.collect()
+
+        print("Computing contacts with cpptraj")
+        hbonds = Contacts(projectID, mutantID, project)
+        hbonds.computeContacts()
+
+        print("Computing 10% Threshold")
+        cpptrajf10 = hbonds.getForwardContacts(10)
+        cpptrajr10 = hbonds.getReverseContacts(10)
+
+        print("Computing 20% Threshold")
+        cpptrajf20 = hbonds.getForwardContacts(5)
+        cpptrajr20 = hbonds.getReverseContacts(5)
+
+        print("Computing 50% Threshold")
+        cpptrajf50 = hbonds.getForwardContacts(2)
+        cpptrajr50 = hbonds.getReverseContacts(2)
+
+        pfolder = project["project_folder"]
+        path_trajectory = f"{pfolder}/mutants/{mutantID}/outputs/{output_md}"
+        distance_threshold = 0.35
+        persistence_threshold = 0.006
+        water = WaterMapper(projectID, mutantID, path_trajectory, distance_threshold, persistence_threshold)
+
+        print("Booting up water mapper")
+        mapdoc = db.dbtable_projects.find_one({"id_project": int(projectID)}, {"residuemap": 1, "objects": 1})
+        wetspots = water.findWetSpots(mapdoc)
+
+        print("Done Scavenging.. saving to database")
+        energydata = {
+            'id_project': int(projectID),
+            'mutantID': int(mutantID),
+            "pairwise_decomp": pairwise,
+            "perresidue_decomp": perresidue,
+            "deltag_total": delta_g['deltag_total'],
+            "deltag_std": delta_g['deltag_std'],
+            "best_frame": bestframe,
+            "rmsd": rmsd,
+            'water_ids': wetspots,
+            'cpptraj_forward': cpptrajf10,
+            'cpptraj_reverse': cpptrajr10,
+            'cpptraj_forward20': cpptrajf20,
+            'cpptraj_reverse20': cpptrajr20,
+            'cpptraj_forward50': cpptrajf50,
+            'cpptraj_reverse50': cpptrajr50
+        }
+
+        db.dbtable_processed_data.delete_one({'id_project': int(projectID), 'mutantID': int(mutantID)})
+        db.dbtable_processed_data.insert_one(energydata)
+
+        timenow = int(time.time()) - timestart
+        timeend = int(time.time())
+        newvalues = {"$set": {
+            'status': 'done',
+            "status_vars.scavenger_elapsed": timenow,
+            "status_vars.scavenger_finish_time": datetime.now(),
+            "status_vars.scavenger_finish_time_seconds": timeend,
+            "status_vars.scavenger_progress_percentage": 100
+        }}
+        db.dbtable_mutants.update_one(q, newvalues)
+
+        if workdir and os.path.exists(workdir):
+            print(f'Clearing space on {workdir} - Removing workdir from ramdrive')
+            shutil.rmtree(workdir)
+
+        print(f"Finished Scavenging Energy tables of mutant {mutantID} of project {projectID}")
+        return mutantID
+
+    except Exception as e:
+        print("Some error in " + str(mutantID) + " " + str(e))
+        timenow = int(time.time()) - timestart
+        newvalues = {"$set": {
+            'status': 'failed',
+            "status_vars.scavenger_elapsed": timenow,
+            "status_vars.scavenger_progress_percentage": 0,
+            "error": str(e)
+        }}
+        db.dbtable_mutants.update_one(q, newvalues)
+
+        try:
+            if workdir and os.path.exists(workdir):
+                shutil.rmtree(workdir)
+        except Exception:
+            pass
+
+        return None
+
+
 class Scavenger():
     
-    path          = "" #This is the path to the project folder - Must be set in the constructor
-    projectID     = 0 #This is the ID of the project - Must be set in the constructor
-    prmtop_file   = "receptor_ligand.prmtop" #this is the OpenMM input in all mutants
-    inpcrd_file   = "receptor_ligand.inpcrd" #This is the OpenMM input in all mutants too
-    pdb_hydrated  = "receptor_ligand_wat.pdb" #this is the hydrated and equilibrated template in all mutants
-    prmtop_hydrated  = "receptor_ligand_wat.prmtop" #this is the hydrated and equilibrated template in all mutants
-    pdb_dry       = "receptor_ligand.pdb" #This is how the template will lokk like in every mutant
-    pdb_mutated   = "original_mutated.pdb" #This is how the template will lokk like in every mutant
-    pdb_original  = "original.pdb" #This is how the template will lokk like in every mutant
+    path          = ""
+    projectID     = 0
+    prmtop_file   = "receptor_ligand.prmtop"
+    inpcrd_file   = "receptor_ligand.inpcrd"
+    pdb_hydrated  = "receptor_ligand_wat.pdb"
+    prmtop_hydrated  = "receptor_ligand_wat.prmtop"
+    pdb_dry       = "receptor_ligand.pdb"
+    pdb_mutated   = "original_mutated.pdb"
+    pdb_original  = "original.pdb"
     output_md     = 'output_md.h5'
     
     cpus_required = {
@@ -76,36 +300,48 @@ class Scavenger():
     #Scavenger Constructor
     def __init__(self, mutantID, projectID, operation, slurmQueue, count, dbhostname):
         
-        self.instance_id     = 0   #Unique node ID in the swarm
+        self.instance_id     = 0
         self.projectID       = projectID
-        self.datetime_start  = int(time.time())     #Date of creation
-        self.log             = []    #Log list
-        self.node_type       = "SCAVENGER"    #type of Node
-        self.lictoken        = ""    #License
-        self.status          = "booting"    #Status of node        
+        self.datetime_start  = int(time.time())
+        self.log             = []
+        self.node_type       = "SCAVENGER"
+        self.lictoken        = ""
+        self.status          = "booting"
         self.slurmQueue      = slurmQueue
         self.hostname        = gethostname()
-        self.DB = DymeDB(dbhostname)
+        self.DB              = DymeDB(dbhostname)
         
         self.default_settings = self.DB.select_document("default_settings",{})
-        self.project          = self.DB.select_document("projects",{"id_project": self.projectID})
-        self.path             = self.default_settings["hdd_path"]+self.default_settings["project_dir"]+"/"+str(projectID) #Get DYME default directory in database
+        self.project          = self.DB.select_document("projects",{"id_project": self.projectID}) if self.projectID else None
+        self.path             = ""
+        if self.projectID:
+            self.path = self.default_settings["hdd_path"] + self.default_settings["project_dir"] + "/" + str(projectID)
         self.executables      = "/dyme_base/backend/dyme/"
                 
-        #Compute CPU availability
-        #self.max_workers = cpu_count()/self.cpus_per_energyprocess
-        self.max_workers = 8
         self.cpus_per_energyprocess = 8
+        self.available_cpus = get_available_cpus()
+        self.max_workers = max(1, self.available_cpus // self.cpus_per_energyprocess)
 
+        print(f"Scavenger configured with {self.cpus_per_energyprocess} CPUs per mutant")
+        print(f"Detected {self.available_cpus} usable CPUs -> max parallel mutants: {self.max_workers}")
 
-        #Add to SLurm Always enqueue new mutants
         if operation == "slurm":
             self.addPendings(count, self.projectID, dbhostname)
 
-        #Process individual mutant of a project id
-        if operation == "process":
-            self.compute_energies(mutantID, projectID, self.project, dbhostname)
-
+        elif operation == "process":
+            if count:
+                self.countPendings(self.projectID)
+            elif mutantID and projectID:
+                compute_energies_worker((
+                    int(mutantID),
+                    int(projectID),
+                    dbhostname,
+                    self.hostname,
+                    self.cpus_per_energyprocess,
+                    self.output_md
+                ))
+            else:
+                self.processPendingsLocal(dbhostname)
 
         
     #Destructor
@@ -126,18 +362,15 @@ class Scavenger():
                 print(f"\n Found {c} mutants pending to scavenge \n ")
                 exit(0)
             
-            if getpending is not None: #if DB returns a pending mutant
+            if getpending is not None:
                 for poll in getpending:
 
-                    #Get values of record
                     projectID = poll["id_project"]
                     mutantID  = poll["mutantID"]
                     print(f"Found pending mutant {mutantID} in project No. {projectID}!!")
                                         
-                    #ENQUEUE EACH ANALYSIS ROUTINE IN SLURM
                     dirs = self.getMutantDirs(mutantID, projectID)
                     
-                    #Build SBATCH file for mutant
                     sbatch_content = """#!/bin/bash -l
 #SBATCH --job-name=DYME_proj_"""+str(projectID)+"_mut_"+str(mutantID)+"""
 #SBATCH --output="""+dirs["outputs"]+"""output_slurm.txt
@@ -158,18 +391,15 @@ wait
 echo "End date: $(date)"
 exit 0
 """
-                    #A random filename
                     filename = dirs["inputs"]+"slurm.dyme"
                     with open(filename, 'w+') as f:
                         print(f"Writing to {filename}")
                         f.write(sbatch_content)
                     
                     try:
-                        #Add to SLURM
                         result = subprocess.run(['sbatch', filename], capture_output=True, text=True, check=True)
-                        job_id = result.stdout.strip().split()[-1]  # Extract the job ID from the output
+                        job_id = result.stdout.strip().split()[-1]
                         print("SLURM job (ID: {}) submitted successfully.".format(job_id))
-                        #Update mutant status to "scavenging"
                         q         = {'id_project': projectID, 'mutantID': mutantID}
                         newvalues = {"$set": { 'status': 'scavenging_on_queue' }}
                         self.DB.dbtable_mutants.update_one(q, newvalues)
@@ -181,233 +411,105 @@ exit 0
             time.sleep(300)
                 
     
-    #Quickie... we don't wanna do this everywhere . Mar 7 2022
     def getMutantDirs(self, mutID, projID):
-        dirs = {}
-        self.path = self.default_settings["hdd_path"]+self.default_settings["project_dir"]+"/"+str(projID)
-        dirs["mutant"]  = f'{self.path}/mutants/{mutID}/'
-        dirs["inputs"]  = f'{self.path}/mutants/{mutID}/inputs/'
-        dirs["outputs"] = f'{self.path}/mutants/{mutID}/outputs/'   
-        dirs['ramdisk_in']  = f'/mnt/ramdisk/{projID}/mutants/{mutID}/inputs/' #Fixed Oct 2024 - Include project id in path
-        dirs['ramdisk_out'] = f'/mnt/ramdisk/{projID}/mutants/{mutID}/outputs/' #Fixed Oct 2024 - Same
-        
-        if not os.path.exists(dirs['ramdisk_in']):
-                os.makedirs(dirs['ramdisk_in'])
-                
-        if not os.path.exists(dirs['ramdisk_out']):
-                os.makedirs(dirs['ramdisk_out'])
-        
-        return dirs        
-    
-    
-        
-    #Code to compute pairwise energies and other scavenging
-    #Out: Stores pairwise energy and scavenging maps in database
-    def compute_energies(self, mutantID, projectID, project, dbhost): #THIS MEANS ALL ENERGIES, ALSO PERRESIDUE    
-            import gc
-            import shutil
-            
-            paths = self.getMutantDirs(mutantID, projectID)
-            #print(paths)
-            
-            #Set GBSA igb
-            if "igb" in project["inputs"]:
-                igbVal = project["inputs"]["igb"] # ADDED FEB 21 2024 - Enables computing energies with igb 2 or 8 (Default is 2)
-            else:
-                igbVal = 2
-            
-            #OCT - 2024 - Add inp    
-            if "inp" in project["inputs"]:
-                inpVal = project["inputs"]["inp"]
-            else:
-                inpVal = 1
-            
-            #Choose GBSA or PBSA
-            energ = "energy_gbsa"
-            if "energy_pbsa" in project["analysis"]:
-                energ = "energy_pbsa"
-            
-            #Pending - Set the right number of steps on MMGBSA!!!!!
-            pid = MMGBSA(mutantID=int(mutantID), outPath=paths['mutant'], interval=30, igb=igbVal, inp=inpVal, compute_mode=energ)
-            pid.setRamDisk(paths['ramdisk_in'], paths['ramdisk_out']) #TODO - Make this universal, needs root to create ramdisk for MMPBSA in Scavenger nodes? (or just save to tmp)
-            pid.makeInputs()
-            pid.writeInputs()
-            codes = pid.launchCodes(self.cpus_per_energyprocess)
-            
-            try:
-                #Create suitable trajectory from HF5
-                #update Mutant
-                from datetime import datetime
-                from DymeDB import DymeDB
-                db = DymeDB(dbhost) #New mongodb instance.. from the fork..
-                
-                #UPDATE STATUS
-                timestart = int(time.time())
-                q         = {'id_project': projectID, 'mutantID': mutantID}
-                newvalues = {"$set": { 'status': 'scavenging_GBSA_pairwise', "status_vars.scavenger_node": self.hostname, "status_vars.scavenger_start_time": datetime.now(), "status_vars.scavenger_start_time_seconds": timestart, "status_vars.scavenger_progress_percentage": 0}}
-                db.dbtable_mutants.update_one(q, newvalues)
-                
-                    
-                pid.genNCtrajectory(paths['mutant'])
-                
-                print("Running pairwise GBSA calculation on mutant "+ str(mutantID), flush=True)
-                cmd = codes['pairwise']
-                print(f'########\n Executing launch code:\n {cmd} \n####################')
-                #TODO - Figure out where to find GGPBSA in any server this is installed into, static paths will not work unless dockerized
-                p = subprocess.Popen([f'{cmd}'], cwd=paths['ramdisk_in'], stdout=subprocess.PIPE, bufsize=2048, shell=True, executable='/bin/bash')
-                print("Waiting for Pairwise process to complete")
-                p.communicate()
-                time.sleep(1)
-                
-                #UPDATE STATUS
-                timenow = int(time.time())-timestart
-                
-                q         = {'id_project': projectID, 'mutantID': mutantID}
-                newvalues = {"$set": { 'status': 'scavenging_GBSA_perresidue', "status_vars.scavenger_elapsed": timenow, "status_vars.scavenger_progress_percentage": 40}}
-                db.dbtable_mutants.update_one(q, newvalues)
-                
-                print("Launching per-residue energies now!")                                
-                cmd = codes['perresidue']
-                print(f'########\n Executing launch code:\n {cmd} \n####################')
-                p = subprocess.Popen([f'{cmd}'], cwd=paths['ramdisk_in'], stdout=subprocess.PIPE, bufsize=2048, shell=True, executable='/bin/bash')
-                print("Waiting for Per-residue process to complete")
-                p.communicate()
-                time.sleep(1)
-                
-                
-
-                    
-                print("##########FINISHED MMPBSA FOR Mutant "+str(mutantID)+" #############")
-                time.sleep(2)
-                
-                
-                
-                ##################################################################################################
-                #Get anchorpoints for project
-                anchorpoints = []
-                for cluster in self.project['clusters']:
-                    if cluster is not None:
-                        anchorpoints += cluster
-                
-                timenow = int(time.time())-timestart
-                q         = {'id_project': projectID, 'mutantID': mutantID}
-                newvalues = {"$set": { 'status': 'scavenging_deltas_table', "status_vars.scavenger_elapsed": timenow, "status_vars.scavenger_progress_percentage": 80}}
-                                
-                db.dbtable_mutants.update_one(q, newvalues)
-                
-                #EXTRACT DATA INTO DATABASE
-                
-                #1. DeltaG total of System (returns dictionary of deltaG tot and deltag std)
-                print("Collecting DeltaGs from MMPBSA outputs")
-                delta_g      = pid.parse_deltaG()
-                gc.collect()
-                #2. Perresidue Energies
-                print("Collecting Perrresidue data")
-                perresidue   = pid.parse_Perresidue()                                
-                gc.collect()
-                #3. Pairwise Energy
-                print("Collecting pairwise data")
-                pairwise    = pid.parse_Pairwise(anchorpoints) #Watch out - Only relevant anchorpoint data is taken.
-                gc.collect()
-                #4. Get best frame (from HDF5 file), write wat and dry PDBs of best frame to output
-                print("Collecting Best Frame")
-                bestframe    = pid.parse_BestFrame()  
-                gc.collect()
-                #5. Get RMSD of Mutant
-                print("Computing RMSD Data")
-                rmsd         = pid.parse_RMSD()
-                gc.collect()
-                
-                #Close object just in case
-                workdir = pid.ramdisk_out
-                del pid
-                gc.collect() #Collect garbage after previous step
-                
-                #6. Get HBONDS of Mutant with CPPTRaj/PyTraj
-                print("Computing contacts with cpptraj")
-                hbonds           = Contacts(projectID, mutantID, self.project)
-                hbonds.computeContacts()
-                print("Computing 10% Threshold")
-                cpptrajf10         =  hbonds.getForwardContacts(10) #Get Forward contacts
-                cpptrajr10         =  hbonds.getReverseContacts(10) #Get Reversed Contacts
-                print("Computing 20% Threshold")
-                cpptrajf20         =  hbonds.getForwardContacts(5) #Get Forward contacts
-                cpptrajr20         =  hbonds.getReverseContacts(5) #Get Reversed Contacts
-                print("Computing 50% Threshold")                
-                cpptrajf50         =  hbonds.getForwardContacts(2) #Get Forward contacts
-                cpptrajr50         =  hbonds.getReverseContacts(2) #Get Reversed Contacts
-
-                #7.Get waters 
-                pfolder               = self.project['project_folder']
-                path_trajectory       = f"{pfolder}/mutants/{mutantID}/outputs/{self.output_md}"
-                distance_threshold    = 0.35 #Distance around atoms of the sidechains
-                persistence_threshold = 0.006  #Percentage of frames for a water to be relevant with speed near 0
-                water                 = WaterMapper(projectID, mutantID, path_trajectory, distance_threshold, persistence_threshold)
-                #water.loadTrajectory()
-                water_atomids         = {}
-                print("Booting up water mapper")
-                map                   = db.dbtable_projects.find_one({"id_project": int(projectID)},{"residuemap": 1, "objects": 1})
-                wetspots              = water.findWetSpots(map)
-                
-                #Delete this two before production
-                print("Done Scavenging.. saving to database")
-                
-                #Insert all this into DB in per-mutant profile books                
-                energydata = {'id_project': projectID, 'mutantID': mutantID, "pairwise_decomp": pairwise, "perresidue_decomp": perresidue, "deltag_total" : delta_g['deltag_total'], "deltag_std": delta_g['deltag_std'], "best_frame": bestframe, "rmsd": rmsd, 'water_ids': wetspots, 'cpptraj_forward': cpptrajf10, 'cpptraj_reverse': cpptrajr10,'cpptraj_forward20': cpptrajf20, 'cpptraj_reverse20': cpptrajr20,'cpptraj_forward50': cpptrajf50, 'cpptraj_reverse50': cpptrajr50}
-                db.dbtable_processed_data.delete_one({'id_project': int(projectID), 'mutantID': int(mutantID)}) #Prevent having to manually delete previously scavenged results
-                db.dbtable_processed_data.insert_one(energydata) #insert scavenger dictionary in the db
-                
-                #update mutant on table
-                timenow = int(time.time())-timestart
-                timeend = int(time.time())
-                q         = {'id_project': projectID, 'mutantID': mutantID}
-                newvalues = {"$set": { 'status': 'done', "status_vars.scavenger_elapsed": timenow, "status_vars.scavenger_finish_time": datetime.now(), "status_vars.scavenger_finish_time_seconds": timeend, "status_vars.scavenger_progress_percentage": 100}}
-                db.dbtable_mutants.update_one(q, newvalues)
-                #Delete work directory from ramdrive
-                print(f'Clearing space on {workdir} - Removing workdir from ramdrive')
-                shutil.rmtree(f'{workdir}')
-                
-                
-                print(f"Finished Scavenging Energy tables of mutant {mutantID} of project {projectID}")
-            except Exception as e: 
-                print("Some error in " + str(mutantID) +" "+str(e))
-                db = DymeDB(dbhost) #New mongodb instance.. from the fork..                
-                timenow = int(time.time())-timestart
-                newvalues = {"$set": { 'status': 'failed', "status_vars.scavenger_elapsed": timenow, "status_vars.scavenger_progress_percentage": 0, "error": str(e)}}
-                db.dbtable_mutants.update_one(q, newvalues)
+        return get_mutant_dirs(self.default_settings, mutID, projID)
 
 
-    
+    def countPendings(self, id_project=0):
+        q = {'status': 'ready_to_scavenge'}
+        if id_project:
+            q['id_project'] = id_project
+
+        c = self.DB.dbtable_mutants.count_documents(q)
+
+        if id_project:
+            print(f"\nFound {c} mutants pending to scavenge in project {id_project}\n")
+        else:
+            print(f"\nFound {c} mutants pending to scavenge across all projects\n")
+
+        exit(0)
+
+
+    def claimPendingBatch(self, batch_size, id_project=0):
+        from datetime import datetime
+
+        claimed = []
+
+        for _ in range(batch_size):
+            q = {'status': 'ready_to_scavenge'}
+            if id_project:
+                q['id_project'] = id_project
+
+            doc = self.DB.dbtable_mutants.find_one_and_update(
+                q,
+                {
+                    '$set': {
+                        'status': 'scavenging_local_queued',
+                        'status_vars.scavenger_node': self.hostname,
+                        'status_vars.scavenger_queue_time': datetime.now(),
+                        'status_vars.scavenger_progress_percentage': 0
+                    }
+                },
+                sort=[('id_project', 1), ('mutantID', 1)],
+                return_document=ReturnDocument.AFTER
+            )
+
+            if doc is None:
+                break
+
+            claimed.append(doc)
+
+        return claimed
+
+
+    def processPendingsLocal(self, dbhostname):
+        print("Scavenger Node Active / Starting LOCAL Scavenger Dispatcher")
+
+        while True:
+            claimed = self.claimPendingBatch(self.max_workers)
+
+            if not claimed:
+                print("Nothing to scavenge. Sleeping 5 mins")
+                time.sleep(300)
+                continue
+
+            claimed_pairs = [(int(doc["id_project"]), int(doc["mutantID"])) for doc in claimed]
+            print(f"Claimed {len(claimed_pairs)} mutants: {claimed_pairs}")
+
+            tasks = [
+                (
+                    int(doc["mutantID"]),
+                    int(doc["id_project"]),
+                    dbhostname,
+                    self.hostname,
+                    self.cpus_per_energyprocess,
+                    self.output_md
+                )
+                for doc in claimed
+            ]
+
+            with Pool(processes=len(tasks)) as pool:
+                results = pool.map(compute_energies_worker, tasks)
+
+            print(f"Finished batch: {results}")
+            print("Batch finished. Requesting a new batch...")
+
+
+    #Kept for backwards compatibility. Worker path now uses compute_energies_worker()
+    def compute_energies(self, mutantID, projectID, project, dbhost):
+        return compute_energies_worker((
+            int(mutantID),
+            int(projectID),
+            dbhost,
+            self.hostname,
+            self.cpus_per_energyprocess,
+            self.output_md
+        ))
+
+
     #Code to compute hbonding information of a single MD trajectory
     #Out: Stores hbonding information per MD trajectory in database
     def compute_hbonds(self, projectID, mutantID, mutantdir):
-        #t = md.load(f'{mutantdir}/outputs/{self.output_md}', top=f'{mutantdir}/inputs/{prmtop_hydrated}') #Load mutant trajectory and prmtop file
-        #hbonds = md.baker_hubbard(t, periodic=False, sidechain_only=True, freq=0.1, exclude_water=False)  #TODO- Se freq to the threshold in the dyme GUI
-        #label = lambda hbond : '%s -- %s' % (t.topology.atom(hbond[0]), t.topology.atom(hbond[2])) #Count hbonds with a quickie lambda function
-        
-        #lastPosInFirstChain = "" #Get from project['residuemap']
-        
-        #cont = 0
-        #for hbond in hbonds:
-          #print(label(hbond))
-        #  atom1 = t.topology.atom(hbond[0])
-        #  atom2 = t.topology.atom(hbond[2])
-          
-        #  if atom1.residue.index+1 < lastPosInFirstChain and atom2.residue.index+1 < lastPosInFirstChain:
-             #Hbonds between sidechains of the same chain... skip
-        #     continue
-         # elif atom1.residue.index+1 > lastPosInFirstChain and atom2.residue.index+1 > lastPosInFirstChain:
-             #Hbonds between sidechains of the same chain... skip
-        #     continue
-        #  else:
-              #Hbonds between both molecular objects!!.. these we are interested in (for now)
-              #print(str(atom1.residue.index+1)+atom1.residue.name+"-->"+str(atom2.residue.index+1)+atom2.residue.name)
-              #print(label(hbond))
-         #     cont +=1
-              
-        #Build hbond counter & maps
-        #Insert hbond map into database (use projectID and mutantID)
-        #update scavenging status for this process on this mutant     
         pass
     
     
@@ -429,48 +531,60 @@ exit 0
     #Code to compute Water tracking in the interface
     #Out: Somehow... try to do this reasonably easy.
     def compute_water_tracking(self, projectID, mutantID, mutantdir):
-        pass    
+        pass
     
     
     
 #MAIN
 if __name__ == "__main__":
 
-    #Parse Arguments
-    parser = argparse.ArgumentParser(description='DYME Scavenger Node. Queues analysis scavenging data from trajectories using a SLURM CPU cluster')
+    parser = argparse.ArgumentParser(
+        description='DYME Scavenger Node can queue analysis to SLURM or process ready_to_scavenge mutants locally in batches.'
+    )
     parser.add_argument('-d', "--dbhost", type=str, help="Hostname or IP Address of the Main Node Docker instance", required=True, default="localhost")
     parser.add_argument('-p','--proj', help='DYME project ID', type=int, required=False, default=0)
-    parser.add_argument('-m','--mut',  help='Mutand ID', type=int, required=False, default=0)
+    parser.add_argument('-m','--mut',  help='Mutant ID', type=int, required=False, default=0)
     parser.add_argument('-q','--que',  help='SLURM queue name. Default: bioinfp_cpu', default="bioinfp_cpu", required=False)
-    parser.add_argument('-e','--ope',  help='Operation to perform: get pending jobs and fill slurm queue, or process a mutant (options are: process|slurm). The default behavior is to process', default="process", required=False)
+    parser.add_argument('-e','--ope',  help='Operation to perform: process|slurm. Default: process', default="process", required=False)
     parser.add_argument('-c','--count_only',  action=argparse.BooleanOptionalAction, help='Count pending trajectories only', default=False, required=False)
     args = vars(parser.parse_args())
 
-    #TODO: Check inputs are numbers when they should be numbers, exit otherwise
-    #Dunno... get fancy.. check id the SLURM queue exists.. check if machine has SLURM installed, etc etc etc... para nota
-
-    #Get mutantiD and project number
     hostname   = args["dbhost"]
     mutantID   = args["mut"]
     projectID  = args["proj"]
     slurmQueue = args["que"]
     operation  = args["ope"]
     count      = args["count_only"]
-        
-    #We set purposely this to the default option, so it prevents launching a process without mutantID and projectID
-    if count:
-        operation = "slurm"
-    
-    #Check mutantID    
+
+    if operation not in ["process", "slurm"]:
+        print("Invalid operation. Use process or slurm")
+        exit(1)
+
     if operation == "process":
-        if mutantID == 0 or projectID == 0:
-            print("You must set mutantID and projectID if you'd like to run a process. Use options -p and -m")
-            exit(0)
+        if count:
+            if projectID:
+                print(f"Counting pending mutants for project {projectID}")
+            else:
+                print("Counting pending mutants across all projects")
+        elif mutantID and projectID:
+            print(f"Processing single mutant {mutantID} of project {projectID}")
+        elif mutantID and not projectID:
+            print("If you provide a mutantID, you must also provide a projectID")
+            exit(1)
+        elif projectID and not mutantID:
+            print("ProjectID alone is not used for single-mutant mode. Provide both -p and -m, or neither for automatic batch mode.")
+            exit(1)
         else:
-            print(f"Queueing mutant {mutantID} of project {projectID}")
-    
-    #Check mutantID    
+            print("Processing ready_to_scavenge mutants across all projects")
+
     if operation == "slurm":
-        print(f"All pending mutants will be sent to queue '{slurmQueue}'. This node should be able to execute sbatch")
-    
+        if not projectID:
+            print("SLURM mode requires a projectID with -p")
+            exit(1)
+
+        if count: 
+            print(f"Counting pending mutants for project {projectID}")
+        else:
+            print(f"All pending mutants of project {projectID} will be sent to queue '{slurmQueue}'. This node should be able to execute sbatch")
+
     node = Scavenger(mutantID, projectID, operation, slurmQueue, count, hostname)
