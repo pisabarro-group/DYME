@@ -2,6 +2,7 @@
 mkdir -p /dyme_root/logs /dyme_root/data/db /dyme_root/projects /dyme_root/nodes/source /dyme_root/database/mongodb
 
 init_conda() {
+    echo "Initializing DYME environment, please wait"
     # >>> conda initialize >>>
     # !! Contents within this block are managed by 'conda init' !!
     __conda_setup="$('/dyme_env/anaconda/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
@@ -19,8 +20,9 @@ init_conda() {
     conda activate dyme_nodes
 }
 
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <nodetype [MD or scavenger]> <dbhost> <projectID> <mutantID>"
+if [ "$#" -eq 0 ]; then
+  echo "Usage: $0 MD <dbhost> <reusegpus>"
+  echo "Usage: $0 scavenger <dbhost> <projectID> <mutantID>"
   exit 1
 fi
 
@@ -38,7 +40,12 @@ case "$NODETYPE" in
   MD)
     echo "Starting MD.py with dbhost: $DBHOST"
     init_conda
-    exec python /dyme_base/backend/dyme/MD.py -d "$DBHOST" "$PROJ"
+    if [ "$PROJ" -ne "" ]; then
+      exec python /dyme_base/backend/dyme/MD.py -d "$DBHOST" -u
+    else
+      exec python /dyme_base/backend/dyme/MD.py -d "$DBHOST"
+    fi
+    
     ;;
   *)
     echo "Unknown nodetype: $NODETYPE. Expected 'scavenger' or 'MD'."
