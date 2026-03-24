@@ -27,7 +27,7 @@
 #   DyME is meant to run in local networks where security is not a concern. It was designed to do science, 
 #   not to comply with internet security standards.
 ###
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 LABEL authors="Pedro Guillem-Gloria <pedro_manuel.guillem_gloria@tu-dresden.de>"
 LABEL vendor="Structural Bioinformatics - Pisabarro Group - TU Dresden"
@@ -195,6 +195,7 @@ RUN ln -s /dyme_root/projects /dyme_base/frontend/img/projects
 
 WORKDIR /
 RUN a2enmod wsgi
+RUN a2enmod rewrite
 
 #########################################################################################################################
 # STEP 5 - ENTRYPOINT

@@ -220,7 +220,7 @@ docker run --name dyme_main -d -v $DYME_PATH:/dyme_root -p 8080:80 -p 27017:2701
 
 
 echo "Waiting for MongoDB to start..."
-until docker exec dyme_main mongo --eval "db.adminCommand('ping')" &>/dev/null; do
+until docker exec dyme_main mongosh --eval "db.adminCommand({ ping: 1 })" &>/dev/null; do
   sleep 2
 done
 echo "Cool...MongoDB is up and running in the Dyme main node!"
@@ -229,17 +229,17 @@ echo ""
 echo "Populating initial database structures"
 
 
-docker exec dyme_main mongo dyme --eval "db.default_settings.insertOne({  \
-    \"www_path\": \"/dyme_base\", \
-    \"hdd_path\": \"$DYME_PATH\", \
-    \"hpc_path\": \"$DYME_PATH\", \
-    \"hpc_path2\": \"$DYME_PATH\", \
-    \"tmpfile_dir\": \"/tmp\", \
-    \"project_dir\": \"/projects\", \
-    \"frontend_dir\": \"/frontend\", \
-    \"backend_dir\": \"/backend\", \
-    \"hostname\": \"$dhs\" \
-})"
+docker exec dyme_main mongosh dyme --eval 'db.default_settings.insertOne({
+  www_path: "/dyme_base",
+  hdd_path: "'"$DYME_PATH"'",
+  hpc_path: "'"$DYME_PATH"'",
+  hpc_path2: "'"$DYME_PATH"'",
+  tmpfile_dir: "/tmp",
+  project_dir: "/projects",
+  frontend_dir: "/frontend",
+  backend_dir: "/backend",
+  hostname: "'"$dhs"'"
+})'
 
 docker cp ./nodes/main_node/dyme_backup dyme_main:/dyme_backup
 docker exec -it dyme_main mongorestore --db dyme --dir /dyme_backup/dyme

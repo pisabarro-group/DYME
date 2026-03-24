@@ -28,7 +28,7 @@
 #   not to comply with internet security standards.
 ###
 
-FROM nvidia/cuda:12.3.0-base-ubuntu20.04
+FROM nvidia/cuda:12.3.0-base-ubuntu:22.04
 
 LABEL authors="Pedro Guillem-Gloria <pedro_manuel.guillem_gloria@tu-dresden.de>"
 LABEL vendor="Structural Bioinformatics - Pisabarro Group - TU Dresden"
