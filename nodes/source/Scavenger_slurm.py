@@ -542,10 +542,10 @@ if __name__ == "__main__":
         description='DYME Scavenger Node can queue analysis to SLURM or process ready_to_scavenge mutants locally in batches.'
     )
     parser.add_argument('-d', "--dbhost", type=str, help="Hostname or IP Address of the Main Node Docker instance", required=True, default="localhost")
-    parser.add_argument('-p','--proj', help='DYME project ID', type=int, required=False, default=0)
-    parser.add_argument('-m','--mut',  help='Mutant ID', type=int, required=False, default=0)
-    parser.add_argument('-q','--que',  help='SLURM queue name. Default: bioinfp_cpu', default="bioinfp_cpu", required=False)
-    parser.add_argument('-e','--ope',  help='Operation to perform: process|slurm. Default: process', default="process", required=False)
+    parser.add_argument('-p','--proj', help='DYME project ID', type=int, required=False)
+    parser.add_argument('-m','--mut', help='Mutant ID', type=int, required=False)
+    parser.add_argument('-q','--que', help='SLURM queue name. Default: bioinfp_cpu', default="bioinfp_cpu", required=False)
+    parser.add_argument('-e','--ope', help='Operation to perform: process|slurm. Default: process', default="process", required=False)
     parser.add_argument('-c','--count_only',  action=argparse.BooleanOptionalAction, help='Count pending trajectories only', default=False, required=False)
     args = vars(parser.parse_args())
 
