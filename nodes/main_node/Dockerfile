@@ -166,7 +166,8 @@ RUN conda install -y -n base conda-libmamba-solver && \
 RUN conda env create -f /dyme-env.yml && \
     conda clean --all -y
 
-RUN conda install -y -n dyme_main salilab::modeller && \
+RUN export KEY_MODELLER=${MODELLER_LICENSE} && \
+    conda install -y -n dyme_main salilab::modeller && \
     conda clean --all -y
 
 #########################################################################################################################
@@ -199,6 +200,8 @@ WORKDIR /etc/apache2/sites-enabled/
 RUN ln -s ../sites-available/dyme-api.conf dyme-api.conf
 RUN rm -f ../sites-available/000-default.conf 000-default.conf
 RUN ln -s /dyme_root/projects /dyme_base/frontend/img/projects
+RUN chown -R www-data:www-data /dyme_root/projects
+RUN chmod -R 775 /dyme_root/projects
 
 WORKDIR /
 RUN a2enmod wsgi

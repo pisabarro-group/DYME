@@ -27,7 +27,7 @@
 #   DyME is meant to run in local networks where security is not a concern. It was designed to do science, 
 #   not to comply with internet security standards.
 ###
-FROM nvidia/cuda:12.3.0-base-ubuntu:22.04
+FROM nvidia/cuda:12.3.0-base-ubuntu22.04
 
 LABEL authors="Pedro Guillem-Gloria <pedro_manuel.guillem_gloria@tu-dresden.de>"
 LABEL vendor="Structural Bioinformatics - Pisabarro Group - TU Dresden"

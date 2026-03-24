@@ -90,12 +90,12 @@ class Scavenger():
         self.default_settings = self.DB.select_document("default_settings",{})
         self.project          = self.DB.select_document("projects",{"id_project": self.projectID})
         self.path             = self.default_settings["hdd_path"]+self.default_settings["project_dir"]+"/"+str(projectID) #Get DYME default directory in database
-        self.executables      = "/group/bioinfp_data/pedro/DYMEBUILD/git/nodes/source/"
+        self.executables      = "/dyme_base/backend/dyme/"
                 
         #Compute CPU availability
         #self.max_workers = cpu_count()/self.cpus_per_energyprocess
         self.max_workers = 8
-        self.cpus_per_energyprocess = 16
+        self.cpus_per_energyprocess = 8
 
 
         #Add to SLurm Always enqueue new mutants

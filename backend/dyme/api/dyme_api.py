@@ -259,9 +259,9 @@ def display_time(seconds, granularity=2):
 @app.route("/getLeapSources")
 def getLeapSources():
     options = "<option value='0'>Select to add...</option>"
-    pathleap = "/dyme_root/anaconda/envs/dyme_main/dat/leap/" #Remember to change this for whatever path leap has on the ambertools package of the env
+    pathleap = "/dyme_env/anaconda/envs/dyme_main/dat/leap/" #Remember to change this for whatever path leap has on the ambertools package of the env
     relevant = ["cmd","parm","lib"]
-    for dir in os.listdir(pathleap):
+    for dir in sorted(os.listdir(pathleap), key=str.lower):
         if dir in relevant:
             if dir == "cmd":
                 options += "<optgroup label='Amber Forcefields'>"
@@ -1877,6 +1877,7 @@ def getProjectJobs():
 
     data      = json.loads(request.get_data())
     projectid = data['idproject']    
+    print(projectid)
     mutants   = list(db.dbtable_mutants.find({"id_project": int(projectid)}, {"_id": 0, "id_project": 0}))
     
     #The mutant has no important waters in the interface

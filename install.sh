@@ -192,14 +192,21 @@ HOST_GID="$(id -g)"
 echo "Building dyme_main with UID=${HOST_UID} GID=${HOST_GID}"
 echo "Building DyME Main-Node container. Get a coffee... this will take a while"
 docker buildx build -f nodes/main_node/Dockerfile --build-arg DYME_UID="$HOST_UID" --build-arg DYME_GID="$HOST_GID" --build-arg MODELLER_LICENSE="$MODELLER_LICENSE" --output=type=docker --tag dyme_main --load .
+echo "DYME MAIN NODE BUILT!!"
+echo "Exporting image to .tar file ..."
 docker save -o dyme_main.tar dyme_main
-#docker run -it --rm -v /opt/dyme/projects:/dyme_root/projects   -v /opt/dyme/logs:/dyme_root/logs --entrypoint /bin/bash dyme_main
+
 
 
 #Build MD/Scavenger node
 echo "Building Worker Nodes container."
 docker buildx build -f nodes/md_node/Dockerfile --output=type=docker --build-arg DYME_PATH="$DYME_PATH" --build-arg MODELLER_LICENSE="$MODELLER_LICENSE" --tag dyme_node --load .
+echo "DYME WORKER NODE BUILT!!"
+echo "Exporting image to .tar file ..."
 docker save -o dyme_node.tar dyme_node
+
+#Build Singularity container for dyme_node
+
 
 #Test 1 interactive bash
 #docker run --rm --runtime=nvidia --gpus all -v $DYME_PATH:/dyme_root --tmpfs /mnt/ramdrive dyme_node MD pcpu1
@@ -211,7 +218,7 @@ echo ""
 
 #Boot the main node, with the database
 docker rm -f dyme_main 2>/dev/null || true
-echo "Starting Main Node (container name: dyme_main)!"
+echo "Starting Main Node (name: dyme_main)!"
 echo "Running with DyME projects path at '$DYME_PATH'"
 #docker run -d --name dyme_main -v $DYME_PATH:/dyme_root -p 8080:8080 -p 27017:27017 dyme_main:latest 
 
@@ -231,9 +238,9 @@ echo "Populating initial database structures"
 
 docker exec dyme_main mongosh dyme --eval 'db.default_settings.insertOne({
   www_path: "/dyme_base",
-  hdd_path: "'"$DYME_PATH"'",
-  hpc_path: "'"$DYME_PATH"'",
-  hpc_path2: "'"$DYME_PATH"'",
+  hdd_path: "/dyme_root",
+  hpc_path: "/dyme_root",
+  hpc_path2: "/dyme_root",
   tmpfile_dir: "/tmp",
   project_dir: "/projects",
   frontend_dir: "/frontend",
@@ -254,7 +261,7 @@ download_tar() {
     TAR_FILE="dyme-test-data-md.tar"
     ZENODO_URL="https://zenodo.org/records/18014320/files/dyme-test-data-md.tar?download=1"
 
-    echo "Downloading test data (11 GB)..."
+    echo "Downloading test data. Please wait"
     curl -L --fail --output "$TAR_FILE" "$ZENODO_URL"
     echo "Download completed: $TAR_FILE"
 
@@ -270,10 +277,10 @@ download_tar() {
 
     #UPDATE PROJECT FOLDERS IN INTERNAL DB TO MATCH DYME_PATH
     docker exec dyme_main mongosh dyme --eval \
-    'db.projects.updateOne({id_project: 49}, {$set: {project_folder: "'"$DYME_PATH"'/projects/49"}})'
+    'db.projects.updateOne({id_project: 49}, {$set: {project_folder: '/dyme_root/projects/49"}})'
 
     docker exec dyme_main mongosh dyme --eval \
-    'db.projects.updateOne({id_project: 50}, {$set: {project_folder: "'"$DYME_PATH"'/projects/50"}})'
+    'db.projects.updateOne({id_project: 50}, {$set: {project_folder: '/dyme_root/projects/50"}})'
 
     echo "Test Data - Load Complete :)"
     echo "---------------------------------------------------"

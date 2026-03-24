@@ -26,17 +26,19 @@ fi
 
 NODETYPE="$1"
 DBHOST="$2"
+PROJ="$3"
+MUT="$4"
 
 case "$NODETYPE" in
   scavenger)
     echo "Starting Scavenger.py with dbhost: $DBHOST"
     init_conda
-    exec python /dyme_base/backend/dyme/Scavenger_slurm.py -dbhost "$DBHOST"
+    exec python /dyme_base/backend/dyme/Scavenger_slurm.py -d "$DBHOST" -p "$PROJ" -m "$MUT"
     ;;
   MD)
     echo "Starting MD.py with dbhost: $DBHOST"
     init_conda
-    exec python /dyme_base/backend/dyme/MD.py -dbhost "$DBHOST"
+    exec python /dyme_base/backend/dyme/MD.py -d "$DBHOST"
     ;;
   *)
     echo "Unknown nodetype: $NODETYPE. Expected 'scavenger' or 'MD'."
