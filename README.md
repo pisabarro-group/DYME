@@ -212,6 +212,7 @@ More information on database collections and document structures can be found at
 
 Dyme nodes organizes MD simulations and assets in the shared folder provided during installation. These files can be navigated under the subfolder **/projects**. Every Dyme project follows the same directory structure:
 
+```text
 ###Directory Structure
 /path/to/dyme_root/          # Shared folder for all nodes (dyme_root)
 ├── projects/                   # Root folder for all projects
@@ -252,7 +253,7 @@ Dyme nodes organizes MD simulations and assets in the shared folder provided dur
 │                    ├──output_perresidue.dat         #MMPBSA output
 │                    ├──output_pairwise_decomp.dat    #MMPBSA decomposition
 │                    └──output_perresidue_decomp.dat  #MMPBSA decomposition
-
+```
 
 ---
 
