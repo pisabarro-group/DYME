@@ -194,7 +194,7 @@ You can redirect the output to your favorite log file or stdout. It will contain
 
 ## Accessing the DyME Database Manually
 
-DyME uses MongoDB as internal database engine. All components and actie nodes communicate through it. The database can be accessed and browsed from Windows or Linux machines using CLI like "MongoDB Compass" or even low-level drivers like "pymongo".
+DyME uses MongoDB as database engine. All components and active nodes communicate through it. The database can be accessed and browsed from Windows or Linux machines using CLI like "MongoDB Compass" or even low-level drivers like "pymongo".
 
 - The database is open and has no admin username or password set.
 - It is exposed through port `27017` at the Main Node server.
@@ -204,7 +204,55 @@ DyME uses MongoDB as internal database engine. All components and actie nodes co
  mongodb://IP_or_hostname_of_main_node:27017/?directConnection=true
 ```
 
-More information on the database collections and document structure can be found at the supplementary material of the DyME publication (pending)
+More information on database collections and document structures can be found at the supplementary material of the DyME publication (pending)
+
+---
+
+## Accessing MD trajectories, Inputs and Outputs
+
+Dyme nodes organizes MD simulations and assets in the shared folder provided during installation. These files can be navigated under the subfolder **/projects**. Every Dyme project follows the same directory structure:
+
+###Directory Structure
+/path/to/dyme_root/          # Shared folder for all nodes (dyme_root)
+├── projects/                   # Root folder for all projects
+│   ├── 1/
+│   ├── 2/
+│   └── 3/                      # Example project folder
+│       ├── inputs/             # Initial input files (Original PDB and tleap scripts)
+│       ├── outputs/            # Reserved for future use
+│       └── mutants/            # Mutant-specific data
+│           ├── 1/
+│           ├── 2/
+│           └── 3/              # Example mutant folder
+│               ├── inputs/     # Generated MD input files (from preparation stage)
+│               └── outputs/    # MD and scavenging outputs
+
+###Input files (per mutant):
+│                    ├──ligand.prmtop                 #Ligand parameters/topology
+│                    ├──receptor.prmtop               #Receptor parameters/topology
+│                    ├──original_mutated.pdb          #PDB file including mutations 
+│                    ├──receptor_ligand.prmtop        #complex parameters/topology 
+│                    ├──receptor_ligand.inpcrd        #complex coordinates 
+│                    ├──receptor_ligand_wat.prmtop    #Hydrated complex parameters/topology
+│                    ├──receptor_ligand_wat.inpcrd    #Hydrated complex coordinates
+│                    ├──receptor_ligand_wat.pdb       #Hydrated complex PDB
+│                    ├──tleap.in                      #Generated Tleap script for mutant
+│                    └── mmgbsa/    
+│                          ├──pairwise.in             #Generated MPBSA input configs
+│                          └──perresidue.in           #Generated MPBSA input configs
+
+
+###Output files (per mutant):
+│                    ├──eq.chk                        #Simulation checkpoint
+│                    ├──output_md.h5                  #MD trajectory file
+│                    ├──output_bestpdb.pdb            #Best pose of trajectory (by total energy)
+│                    ├──output_bestpdb_wat.pdb        #Best pose (hydrated)
+│                    ├──output_process.txt            #MD execution log
+│                    ├──output_pairwise.dat           #MMPBSA output
+│                    ├──output_perresidue.dat         #MMPBSA output
+│                    ├──output_pairwise_decomp.dat    #MMPBSA decomposition
+│                    └──output_perresidue_decomp.dat  #MMPBSA decomposition
+
 
 ---
 
