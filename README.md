@@ -212,8 +212,9 @@ More information on database collections and document structures can be found at
 
 Dyme nodes organizes MD simulations and assets in the shared folder provided during installation. These files can be navigated under the subfolder **/projects**. Every Dyme project follows the same directory structure:
 
+
+**Directory Structure**
 ```text
-###Directory Structure
 /path/to/dyme_root/          # Shared folder for all nodes (dyme_root)
 ├── projects/                   # Root folder for all projects
 │   ├── 1/
@@ -227,8 +228,9 @@ Dyme nodes organizes MD simulations and assets in the shared folder provided dur
 │           └── 3/              # Example mutant folder
 │               ├── inputs/     # Generated MD input files (from preparation stage)
 │               └── outputs/    # MD and scavenging outputs
-
-###Input files (per mutant):
+```
+**Input files (per mutant):**
+```text
 │                    ├──ligand.prmtop                 #Ligand parameters/topology
 │                    ├──receptor.prmtop               #Receptor parameters/topology
 │                    ├──original_mutated.pdb          #PDB file including mutations 
@@ -241,9 +243,10 @@ Dyme nodes organizes MD simulations and assets in the shared folder provided dur
 │                    └── mmgbsa/    
 │                          ├──pairwise.in             #Generated MPBSA input configs
 │                          └──perresidue.in           #Generated MPBSA input configs
+```
 
-
-###Output files (per mutant):
+**Output files (per mutant):**
+```text
 │                    ├──eq.chk                        #Simulation checkpoint
 │                    ├──output_md.h5                  #MD trajectory file
 │                    ├──output_bestpdb.pdb            #Best pose of trajectory (by total energy)
