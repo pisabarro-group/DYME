@@ -13,7 +13,7 @@ The system is made of two main components:
 ## Architecture
 
 - **Main Node (Docker)**
-  - Main entry point. Runs MongoDB and other backend services
+  - Runs MongoDB and other backend services
   - Exposes ports:
     - `8080` (API/UI)
     - `27017` (MongoDB access)
@@ -27,22 +27,21 @@ The system is made of two main components:
   - All nodes must access a common filesystem 
   - Recommended: Network-mounted directory (NFS)
 
-DyME is tailred to run in Linux (x86_64) hardware. 
-We highly recommend a debian-based distro (Ubuntu ≥ 22.04) or RHEL based distros. Other distros are not currently supported by the installer.
+DyME runs in Linux (x86_64) hardware. We highly recommend a debian-based distro (Ubuntu ≥ 22.04) or RHEL based distros. Other distros are not currently supported by the installer.
 
 ---
 
 ## Build and Install Requirements
 
-The DyME installer and its execution depends on the following third-party components:
+The DyME installer and its execution depend on third-party components:
 
 - Docker (for main node)
-- BuildX (Docker system building plugin)
+- BuildX (Docker build plugin)
 - Apptainer / Singularity ≥ 3.10 (for worker node deployment)
+
 - A Salilab's MODELLER license
   (Request your free academic license here: https://salilab.org/modeller/registration.html)
  
-The installer will check these requirements and attempt to install if missing. Your Linux user **must have sudoer privileges** to build and run Docker containers.
 
 ---
 
@@ -69,7 +68,7 @@ The installer will check these requirements and attempt to install if missing. Y
 
 ## Installation
 
-The DyME installer automatically builds the platform. To begin, login to the console of the machine that will act as "Main Node" and navigate to a suitable directory. Make sure you have at least 20Gb of disk available
+The DyME installer automatically builds the platform for you. To begin, login to the console of the machine that will act as "Main Node" and navigate to a suitable directory. Make sure you have at least 20Gb available.
 
 1) Clone the DYME repository, and execute the installer:
 
@@ -80,23 +79,23 @@ chmod a+x install.sh
 ./install.sh
 ```
 
-The installer will check for pre-requisites and attempt to install missing dependencies (Docker, BuildX Apptainer, curl, and others). Likewise, it will verify if your user has permissions to run docker containers. If the installer is unable to solve the dependencies, install them manually and run the installer again.
+The installer will check for pre-requisites and attempt to install missing dependencies (Docker, BuildX Apptainer, curl, and others). It will also verify if your user has permissions to run docker containers. If the installer is unable to solve the dependencies, install them manually - and run the installer again.
 
-The installer will create the necesary directory structures in the provided directory PATH. This path will be mapped to the internal directory `/dyme_root` in all containers.
+The installer will create the necesary directory structures in the provided directory PATH. This path will bind to the internal directory `/dyme_root` in all containers.
 
-2) This will build:
+2) The installer will build:
 - A Docker image called `dyme_main` (This is your main server)
-- A Singularity `.sif` image for container `dyme_node`
+- A Singularity `.sif` image for container `dyme_node` (This contains worker nodes)
 
 
-3) Once finished, you can access the UI by entering http://dymehostname:8080 in your browser.
+3) Upon completion DyME should be running on your Docker server. You can access the UI by entering http://server_hostname:8080 in your browser.
 
 
 ---
 
 ## Test Data
 
-If you would like to install test data, answer "y" when prompted to do so by the installer. The DyME test-data (approx. ~11GB of MD simulations) will be downloaded from here (https://zenodo.org/records/18014320) and deposited into your fresh DyME installation.
+If you would like to install test-data, answer "y" when prompted to do so by the installer. The DyME test-data  will be downloaded from here (https://zenodo.org/records/18014320). It contains approx. ~11GB of MD simulations.
 
 (DOI: https://doi.org/10.5281/zenodo.18014319)
 
@@ -104,11 +103,11 @@ If you would like to install test data, answer "y" when prompted to do so by the
 
 ## Running The Main Node
 
-Upon creation, the main dyme node is automatically launched in your server. The following commands can be used to control the container (start or stop):
+The following commands can be used to control the container (start or stop):
 
 ### Main node start
 
-Replace "/path/to/filesystem" with the your shared network folder.
+Replace "/path/to/filesystem" with the folder you provided during installation.
 
 ```bash
    docker run \
@@ -120,6 +119,7 @@ Replace "/path/to/filesystem" with the your shared network folder.
         dyme_main:latest
 ```
 
+To stop a running DyME Main node, execute the following cmd:
 ### Main node stop
 ```bash
    docker stop dyme_main
@@ -129,15 +129,15 @@ Replace "/path/to/filesystem" with the your shared network folder.
 
 ## Running Workers
 
-Worker nodes reside in the .sif container called `dyme_node.sif`. It should be in the same directory where dyme was cloned. This file is portable and can be copied to remote servers, HPC partitions or shared locations.
+Worker nodes reside in the .sif container called `dyme_node.sif`. It should have been created in the same directory where DyME was cloned. This file is **portable**. It can be copied to remote servers, HPC partitions or shared locations.
 
-- Servers (GPU or CPU) will need to have Apptainer (or Singularity) installed to act as a worker node.
-- The container can be run manually from the console, or using queue managers (i.e. SLURM).
+- You need Apptainer (or Singularity) installed to launch a worker node.
+- The container can run manually from the console, or masively using queue managers (i.e. SLURM).
 
 
 ### Tip:
-DyME embeds a wrapper script (launch_node.sh) to facilitate starting worker nodes on any machine. 
-This script requires .sif container to exist in the same directory.
+DyME includes a wrapper script (launch_node.sh) to facilitate launching worker nodes on any machine. 
+Keep in mind this script requires the .sif container to be located in the same directory.
 
 The syntax to use the wrapper is:
 ```bash
@@ -157,7 +157,7 @@ The syntax to use the wrapper is:
   - shared directory mounted across all nodes
 
 
-Alternatively, if you would like to start the worker on your own node using Apptainer, modify the required variables manually and execute the following command:
+If you would like to start the worker manually. using Apptainer, modify the required variables manually and execute the following command:
 
 ```bash
  export BINDPATH=/path/to/shared/directory
@@ -171,6 +171,7 @@ Alternatively, if you would like to start the worker on your own node using Appt
     "$SIF_IMAGE" \
     "$NODETYPE" "$DBHOST"
 ```
+
 ---
 
 ### Examples
