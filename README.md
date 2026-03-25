@@ -3,8 +3,7 @@
 
 ## Overview
 
-DYME is a computational platform for automated large-scale molecular dynamics (MD) analysis and high-throughput mutational exploration. 
-It orchestrates MD simulations and visual comparative analysis into a single workflow.
+DYME is a computational platform for automated large-scale molecular dynamics (MD) analysis and high-throughput mutational exploration. It orchestrates MD simulations and visual comparative analysis into a single workflow.
 
 The system is made of two main components:
 - **dyme_main**: A central server (Docker) serving a central database, web UI and RESTful API
@@ -44,8 +43,7 @@ The DyME installer and its execution depends on the following third-party compon
 - A Salilab's MODELLER license
   (Request your free academic license here: https://salilab.org/modeller/registration.html)
  
-The installer will check these requirements and attempt to install if missing. 
-Your Linux user **must have sudoer privileges** to build and run Docker containers.
+The installer will check these requirements and attempt to install if missing. Your Linux user **must have sudoer privileges** to build and run Docker containers.
 
 ---
 
@@ -72,9 +70,9 @@ Your Linux user **must have sudoer privileges** to build and run Docker containe
 
 ## Installation
 
-The DyME installer takes care of all steps to installation. To install DyME, login to the machine that will act as "Main Node" and chose a suitable directory.
+The DyME installer automatically builds the platform. To begin, login to the console of the machine that will act as "Main Node" and navigate to a suitable directory. Make sure you have at least 20Gb of disk available
 
-Then, execute:
+1) Clone the DYME repository, and execute the installer:
 
 ```bash
 git clone https://github.com/pisabarro-group/DYME.git
@@ -83,21 +81,18 @@ chmod a+x install.sh
 ./install.sh
 ```
 
-This builds:
-- A Docker image for container `dyme_main` 
+The installer will check for pre-requisites and attempt to install missing dependencies (Docker, BuildX Apptainer, curl, and others). Likewise, it will verify if your user has permissions to run docker containers. If the installer is unable to solve the dependencies, install them manually and run the installer again.
+
+The installer will create the necesary directory structures in the provided directory PATH. This path will be mapped to the internal directory `/dyme_root` in all containers.
+
+2) This will build:
+- A Docker image called `dyme_main` (This is your main server)
 - A Singularity `.sif` image for container `dyme_node`
 
-The installer will check for pre-requisites and attempt to install missing dependencies (Docker, BuildX, Apptainer, curl, and others). Likewise, it will verify if your user has permissions to run docker containers. 
 
-If the installer is unable to solve the dependencies, install them manually and run the installer again.
+3) Once finished, you can access the UI by entering http://dymehostname:8080 in your browser.
 
-After dependencies are verified, the installer will request:
-- Confrmation of license terms
-- The path to the shared fiesystem
-- The hostname or IP of the machine that will act as Main Node
-- Your MODELLER license key
 
-The installer will also create the necesary directory structures in the provided PATH to te chared filesystem.
 ---
 
 ## Test Data
@@ -109,10 +104,13 @@ If you would like to install test data, answer "y" when prompted to do so by the
 ---
 
 ## Running The Main Node
-The main container is automatically launched in your local Docker server. 
-The following commands can be used to control the container (start or stop):
+
+Upon creation, the main dyme node is automatically launched in your server. The following commands can be used to control the container (start or stop):
 
 ### Main node start
+
+Replace "/path/to/filesystem" with the your shared network folder.
+
 ```bash
    docker run \
         --name dyme_main \
@@ -132,14 +130,13 @@ The following commands can be used to control the container (start or stop):
 
 ## Running Workers
 
-Worker nodes reside in the .sif container called `dyme_node.sif`.
-This file is portable and can be copied to remote servers, HPC partitions or shared locations.
+Worker nodes reside in the .sif container called `dyme_node.sif`. It should be in the same directory where dyme was cloned. This file is portable and can be copied to remote servers, HPC partitions or shared locations.
 
 - Servers (GPU or CPU) will need to have Apptainer (or Singularity) installed to act as a worker node.
 - The container can be run manually from the console, or using queue managers (i.e. SLURM).
 
 
-###Tip:
+### Tip:
 DyME embeds a wrapper script (launch_node.sh) to facilitate starting worker nodes on any machine. 
 This script requires .sif container to exist in the same directory.
 
