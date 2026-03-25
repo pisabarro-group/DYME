@@ -210,7 +210,7 @@ More information on database collections and document structures can be found at
 
 ## Accessing MD trajectories, Inputs and Outputs
 
-Dyme nodes organizes MD simulations and assets in the shared folder provided during installation. These files can be navigated under the subfolder **/projects**. Every Dyme project follows the same directory structure:
+Dyme nodes deposits MD simulations and assets in the shared folder provided during installation, specifically under the subfolder **/projects**. All Dyme projects follows the same directory structure:
 
 
 **Directory Structure**
@@ -222,12 +222,12 @@ Dyme nodes organizes MD simulations and assets in the shared folder provided dur
 │   └── 3/                      # Example project folder
 │       ├── inputs/             # Initial input files (Original PDB and tleap scripts)
 │       ├── outputs/            # Reserved for future use
-│       └── mutants/            # Mutant-specific data
+│       └── mutants/            # Contains a folder per Mutant
 │           ├── 1/
 │           ├── 2/
 │           └── 3/              # Example mutant folder
 │               ├── inputs/     # Generated MD input files (from preparation stage)
-│               └── outputs/    # MD and scavenging outputs
+│               └── outputs/    # MD and scavenging outputs (outputs of all workers)
 ```
 **Input files (per mutant):**
 ```text
@@ -235,8 +235,8 @@ Dyme nodes organizes MD simulations and assets in the shared folder provided dur
 │                    ├──ligand.prmtop                 #Ligand parameters/topology
 │                    ├──receptor.prmtop               #Receptor parameters/topology
 │                    ├──original_mutated.pdb          #PDB file including mutations 
-│                    ├──receptor_ligand.prmtop        #complex parameters/topology 
-│                    ├──receptor_ligand.inpcrd        #complex coordinates 
+│                    ├──receptor_ligand.prmtop        #Complex parameters/topology 
+│                    ├──receptor_ligand.inpcrd        #Complex coordinates 
 │                    ├──receptor_ligand_wat.prmtop    #Hydrated complex parameters/topology
 │                    ├──receptor_ligand_wat.inpcrd    #Hydrated complex coordinates
 │                    ├──receptor_ligand_wat.pdb       #Hydrated complex PDB
@@ -250,7 +250,7 @@ Dyme nodes organizes MD simulations and assets in the shared folder provided dur
 ```text
 │               ├── outputs/
 │                    ├──eq.chk                        #Simulation checkpoint
-│                    ├──output_md.h5                  #MD trajectory file
+│                    ├──output_md.h5                  #MD trajectory file (in HDF5 format)
 │                    ├──output_bestpdb.pdb            #Best pose (by total energy)
 │                    ├──output_bestpdb_wat.pdb        #Best pose (same, but hydrated)
 │                    ├──output_process.txt            #MD execution log
@@ -259,6 +259,8 @@ Dyme nodes organizes MD simulations and assets in the shared folder provided dur
 │                    ├──output_pairwise_decomp.dat    #MMPBSA.py decomposition
 │                    └──output_perresidue_decomp.dat  #MMPBSA.py decomposition
 ```
+
+The scavenging outputs of intermolecular contacts, water mapping and RMSD data are stored directly in the Database.
 
 ---
 
