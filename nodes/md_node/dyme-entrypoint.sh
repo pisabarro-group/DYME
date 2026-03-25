@@ -21,21 +21,24 @@ init_conda() {
 }
 
 if [ "$#" -eq 0 ]; then
+  echo "You must provide the node to launch (MD or scavenger) and the IP or hostname of the Main node"
+  echo "- The node must be reachable from here"
+  echo "- Don't forget to --bind the container /dyme_root to yout NFS share path"
+  echo ""
   echo "Usage: $0 MD <dbhost> <reusegpus>"
-  echo "Usage: $0 scavenger <dbhost> <projectID> <mutantID>"
+  echo "Usage: $0 scavenger <dbhost>"
   exit 1
 fi
 
 NODETYPE="$1"
 DBHOST="$2"
 PROJ="$3"
-MUT="$4"
 
 case "$NODETYPE" in
   scavenger)
     echo "Starting Scavenger.py with dbhost: $DBHOST"
     init_conda
-    exec python /dyme_base/backend/dyme/Scavenger_slurm.py -d "$DBHOST" -p "$PROJ" -m "$MUT"
+    exec python /dyme_base/backend/dyme/Scavenger_slurm.py "$DBHOST"
     ;;
   MD)
     echo "Starting MD.py with dbhost: $DBHOST"
