@@ -207,10 +207,10 @@ If you would like to start the worker manually. using Apptainer, modify the requ
 
 ---
 
-## Notes
+## Citation
 
-- Multiple scavenger nodes can run concurrently
-- No external scheduler required for scavenging
-- Database ensures no duplicate processing
+If you use DYME in your research, please cite:
+
+[Paper / preprint / DOI]
 
 ---
