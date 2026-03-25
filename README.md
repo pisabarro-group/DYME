@@ -1,5 +1,4 @@
-# DYME
-## (Dynamic Mutagenesis Engine)
+# DYME (Dynamic Mutagenesis Engine)
 
 ## Overview
 
