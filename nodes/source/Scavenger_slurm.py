@@ -68,8 +68,8 @@ def get_mutant_dirs(default_settings, mutID, projID):
     dirs["mutant"]  = f'{base_path}/mutants/{mutID}/'
     dirs["inputs"]  = f'{base_path}/mutants/{mutID}/inputs/'
     dirs["outputs"] = f'{base_path}/mutants/{mutID}/outputs/'
-    dirs["ramdisk_in"]  = f'/mnt/ramdisk/{projID}/mutants/{mutID}/inputs/'
-    dirs["ramdisk_out"] = f'/mnt/ramdisk/{projID}/mutants/{mutID}/outputs/'
+    dirs["ramdisk_in"]  = f'/dev/shm/{projID}/mutants/{mutID}/inputs/'
+    dirs["ramdisk_out"] = f'/dev/shm/{projID}/mutants/{mutID}/outputs/'
 
     os.makedirs(dirs["ramdisk_in"], exist_ok=True)
     os.makedirs(dirs["ramdisk_out"], exist_ok=True)
