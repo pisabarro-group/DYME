@@ -98,7 +98,7 @@ The installer will create the necesary directory structures in the provided dire
 If you would like to install test-data, answer "y" when prompted to do so by the installer. The DyME test-data  will be downloaded from here (https://zenodo.org/records/18014320). It contains approx. ~11GB of MD simulations.
 
 
-** IT IS NOT NECESARY TO MANUALLY DOWNLOAD THE TEST DATA - THE INSTALLER WILL DO IT FOR YOU**
+**IT IS NOT NECESARY TO MANUALLY DOWNLOAD THE TEST DATA - THE INSTALLER WILL DO IT FOR YOU**
 
 ---
 
