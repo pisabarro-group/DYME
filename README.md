@@ -215,7 +215,7 @@ Dyme nodes organizes MD simulations and assets in the shared folder provided dur
 
 **Directory Structure**
 ```text
-/path/to/dyme_root/          # Shared folder for all nodes (dyme_root)
+/path/to/dyme_root/             # Shared folder for all nodes (dyme_root)
 ├── projects/                   # Root folder for all projects
 │   ├── 1/
 │   ├── 2/
@@ -231,6 +231,7 @@ Dyme nodes organizes MD simulations and assets in the shared folder provided dur
 ```
 **Input files (per mutant):**
 ```text
+│               ├── inputs/
 │                    ├──ligand.prmtop                 #Ligand parameters/topology
 │                    ├──receptor.prmtop               #Receptor parameters/topology
 │                    ├──original_mutated.pdb          #PDB file including mutations 
@@ -241,21 +242,22 @@ Dyme nodes organizes MD simulations and assets in the shared folder provided dur
 │                    ├──receptor_ligand_wat.pdb       #Hydrated complex PDB
 │                    ├──tleap.in                      #Generated Tleap script for mutant
 │                    └── mmgbsa/    
-│                          ├──pairwise.in             #Generated MPBSA input configs
-│                          └──perresidue.in           #Generated MPBSA input configs
+│                          ├──pairwise.in             #Generated MPBSA.py input configs
+│                          └──perresidue.in           #Generated MPBSA.py input configs
 ```
 
 **Output files (per mutant):**
 ```text
+│               ├── outputs/
 │                    ├──eq.chk                        #Simulation checkpoint
 │                    ├──output_md.h5                  #MD trajectory file
-│                    ├──output_bestpdb.pdb            #Best pose of trajectory (by total energy)
-│                    ├──output_bestpdb_wat.pdb        #Best pose (hydrated)
+│                    ├──output_bestpdb.pdb            #Best pose (by total energy)
+│                    ├──output_bestpdb_wat.pdb        #Best pose (same, but hydrated)
 │                    ├──output_process.txt            #MD execution log
-│                    ├──output_pairwise.dat           #MMPBSA output
-│                    ├──output_perresidue.dat         #MMPBSA output
-│                    ├──output_pairwise_decomp.dat    #MMPBSA decomposition
-│                    └──output_perresidue_decomp.dat  #MMPBSA decomposition
+│                    ├──output_pairwise.dat           #MMPBSA.py output
+│                    ├──output_perresidue.dat         #MMPBSA.py output
+│                    ├──output_pairwise_decomp.dat    #MMPBSA.py decomposition
+│                    └──output_perresidue_decomp.dat  #MMPBSA.py decomposition
 ```
 
 ---
