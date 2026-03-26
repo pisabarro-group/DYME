@@ -49,7 +49,7 @@ DyME runs exclusively in Linux (x86_64) systems. We highly recommend debian-base
     
 - **Network**
   - All nodes (main and worker) should reside in the same network (recommended)
-  - Distributed networks will work as long as the worker nodes can ping the main node.
+  - Distributed networks will work as long as the worker nodes can ping the main node
       
 ---
 
@@ -61,7 +61,7 @@ The DyME installer and containers depend on third-party components:
 - BuildX (Docker build plugin)
 - Apptainer / Singularity ≥ 3.10 (for worker node deployment)
 
-- Salilab's MODELLER license (for model creation)
+- Salilab's MODELLER license (for model creation)  
   (Request a free academic license key here: https://salilab.org/modeller/registration.html)
 
 The installer will check for pre-requisites and attempt to install missing dependencies (Docker, BuildX Apptainer, curl, and others). It will also verify your user has permissions to run docker containers. If the installer is unable to solve dependencies, install them manually and run the installer again.
@@ -70,7 +70,7 @@ The installer will check for pre-requisites and attempt to install missing depen
 
 ## Installation
 
-The DyME installer automatically builds the platform for you. To begin, login to the console of the machine that will act as "Main Node" and navigate to a suitable directory. Make sure you have at least 20Gb of free space available for building and storing container images.
+The DyME installer automatically builds the platform for you. To begin, login to the machine that will act as "Main Node" and navigate to a suitable directory. Make sure you have at least 20Gb of free space available for building and storing container images.
 
 Step 1 - Clone the DYME repository, and execute the installer:
 
@@ -81,36 +81,36 @@ chmod a+x install.sh
 ./install.sh
 ```
 
-These commands will build:
-- A Docker image called `dyme_main` (This is your main server)
-- A Singularity `.sif` image called `dyme_node.sif` (This contains both worker nodes)
+This action should yield:
+- A Docker image called `dyme_main` (This is your main server container)
+- A Singularity `.sif` image called `dyme_node.sif` (This contains the worker node container)
 
-The installer will also create the necesary directory structures in the directory PATH you provided as DyME main folder. It will be used as persistent storage (databases, MD trajectories, inputs, outputs, etc), and should be "accesible" from all nodes, as it binds to the internal directory `/dyme_root` in worker containers.
+The installer will create the necesary folders in the directory provided as shared folder (dyme_root). It will be used as persistent storage (databases, MD trajectories, inputs, outputs, etc) and should be "accesible" from all nodes - as it binds to the internal directory `/dyme_root` in containers.
 
 Step 2- Verify the Main Node is up
 
-Upon completion, DyME should be running on your Docker server. You can access the UI by entering http://the_server_hostname:8080 in your browser.
+Upon completion, the DyME Main node should be running on Docker. You can access the UI by entering http://the_server_hostname:8080 in your browser.
 
 
 ---
 
 ## Test Data
 
-If you would like to install test-data, answer "y" when prompted to do so by the installer. The DyME test-data will be downloaded from here (https://zenodo.org/records/18014320) and loaded into your fresh DyME system. It contains approx. ~11GB of MD simulations and database records.
+To install test-data, answer "y" when prompted to do so by the installer. It will be downloaded from here (https://zenodo.org/records/18014320) and loaded into your fresh DyME system automatically. It contains two projects and approx. ~11GB of MD simulations, plus the corresponding database records.
 
-  **DO NOT DOWNLOAD OR MANUALLY HANDLE THE TEST-DATA IMPORT - THE INSTALLER WILL DO THIS FOR YOU**
+  **DO NOT DOWNLOAD OR MANUALLY HANDLE THE TEST-DATA - THE INSTALLER WILL DO THIS FOR YOU**
 
-A detailed example on interpreting the data can be found on the supplementary material of the DyME publication (link pending)
+A detailed example on interpreting the test-data can be found on the supplementary material of the DyME publication (link pending)
 
 ---
 
 ## Running The Main Node
 
-The main node runs on any server with Docker (by default, this is where you ran the installer). The following commands can be used to control the main node (start or stop). Keep in mind this node must remain active for remote workers to perform tasks, access the database, or using the web UI to explore results.
+The main node runs on any server with Docker (by default, this is where you ran the installer). The following commands control the container (start or stop). Keep in mind this node must remain active for remote workers to perform tasks, access the database, or using the DyME-TCA web to explore results.
 
 ### Main node start
 
-Replace "/path/to/filesystem" with the folder you provided during installation. If the shared directory is not bound to the internal /dyme_root folder, the container won't be able to access persistent data.
+Replace "/path/to/filesystem" with the folder (dyme_root) provided during installation. The shared folder must be bound to the internal /dyme_root folder of containers, else they won't be able to access persistent data.
 
 ```bash
    docker run \
@@ -132,18 +132,18 @@ To stop the DyME Main node, execute the following cmd:
 
 ## Running Workers
 
-Worker nodes reside in the .sif container called `dyme_node.sif` that was created during installation. The container can run either as MD node, or savenger node. Containers are fully **portable**. They can be copied to remote servers, HPC partitions or shared locations.
+Worker nodes reside in the .sif container called `dyme_node.sif` created during installation. The container can run either as MD node, or as savenger node. The container is fully **portable**. It can be copied to remote servers, HPC partitions or shared locations.
 
-- You will need Apptainer (or Singularity) installed to launch a worker node.
-- You can run an MD node and a scavenger node on the same server, on 2 separate containers.
-- The container can run manually from the console, or using a queue manager (i.e. SLURM).
-- SLURM batch files must be crafted by the user for their respective HPC environment.
+- You will need Apptainer (or Singularity) on servers to launch a worker node
+- You can run both nodes (MD and scavenger) on the same server by booting 2 separate containers
+- The container can run manually (from the console) or using a queue manager (i.e. SLURM)
+- SLURM batch files must be crafted by the user for their respective HPC environment
 
 
 ### Tip:
 DyME includes a wrapper script (**launch_node.sh**) to facilitate deployment. Keep in mind the script requires the .sif container to be located in the same directory. 
 
-The .sif file can be copied to a shared location. If so, modify the variable **$SIF_IMAGE** inside the script accordingly - so that the wrapper runs from everywhere within your environment.
+The .sif file can be copied to a shared location. If so, modify the variable **$SIF_IMAGE** inside the script so that it points to the full path to the file. This way the wrapper will work from any server within your environment.
 
 The syntax to use the wrapper is:
 
@@ -163,7 +163,8 @@ The syntax to use the wrapper is:
 - `path`:
   - path to shared directory mounted across all nodes
 
-Alternatively, to start the worker manually (using Apptainer), modify the required variables and run the following command:
+
+To start a worker node manually (using Apptainer directly), modify the required variables and run the following commands:
 
 ```bash
  export BINDPATH=/path/to/shared/directory
@@ -178,22 +179,20 @@ Alternatively, to start the worker manually (using Apptainer), modify the requir
     "$NODETYPE" "$DBHOST"
 ```
 
----
-
 ### Examples
 
-Launching an MD node with Main node hosted at 192.168.1.10, and DyME folder at /group/dyme_data
+Launch an MD node with Main node hosted at 192.168.1.10, and shared folder at /group/dyme_data
 
 ```bash
  ./launch_node.sh MD 192.168.1.10 /group/dyme_data
 ```
 
-Launching a scavenger node, with Main node hosted at localhost, and DyME folder at /data/dyme
+Launch a scavenger node, with Main node hosted at localhost, and shared folder at /data/dyme
 ```bash
  ./launch_node.sh scavenger localhost /data/dyme
 ```
 
-You can redirect the output to your favorite log file or stdout. It will contain detailed information on what the container is doing.
+You can redirect the worker output to your favorite log file. It will contain extremely detailed information on what the containers are doing at every satage of the workflow.
 
 ---
 
@@ -222,7 +221,7 @@ The database "dyme" hosts the following collections and views:
  -VIEWS:
   mutants_deltag         #Aggregation pipeline combining energetics and mutant data
   mutants_ready          #Auxiliaty view for status updater
-  mutants_status         #Aggregation for group mutants by project and status
+  mutants_status         #Aggregation for grouping mutants by project and status
 ```
 
 ###Query Examples
