@@ -237,7 +237,7 @@ For more information on collections and document structure can be found at the s
 
 ## Accessing MD trajectories, Inputs and Outputs
 
-Worker nodes deposit MD simulations and assets in the shared folder provided during installation (dyme_root), specifically under the subfolder **/projects**. It follows the following structure:
+Worker nodes deposit MD simulations and assets in the shared folder (dyme_root) under the subfolder **/projects** and it follows the following structure:
 
 
 **Directory Structure**
