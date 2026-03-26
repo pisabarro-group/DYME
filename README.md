@@ -6,9 +6,8 @@ DYME is a computational platform for automated large-scale molecular dynamics (M
 
 The system is made of two distributed components:
 
-**dyme_main**: A single server (Docker) hosting a central database, web UI and API
+**dyme_main**: A single server (Docker) hosting a central database, web UI and API  
 **dyme_node**: A worker container (Singularity/Apptainer) executing asynchronous MD and scavenging tasks
-
 
 ---
 
