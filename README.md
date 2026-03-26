@@ -202,7 +202,7 @@ You can redirect the output to your favorite log file or stdout. It will contain
 
 DyME uses MongoDB as database engine. All components and active nodes communicate through it. The database can be accessed using GUI tools like "MongoDB Compass" or even low-level drivers like "pymongo", from your own python scripts.
 
-- The database is open and has no admin username or password set by default.
+- The database has no admin username or password set by default.
 - It is exposed through port `27017` at the Main Node server.
 - The DymeDB() class contains a wrapper you can re-use in your projects.
 - To connect to the database, use a connection URI:
@@ -211,19 +211,26 @@ DyME uses MongoDB as database engine. All components and active nodes communicat
  mongodb://IP_or_hostname_of_main_node:27017/?directConnection=true
 ```
 
-The database "dyme" has the following collections and views:
+The database "dyme" hosts the following collections and views:
 
 ```text
  -COLLECTIONS:
   default_settings       #System paths defined during install
-  mutants                #One document per mutant defintion (id_project / mutantID pair)
-  processed_data         #One collection of all scavenged data per mutant 
-  projects               #Project data, residue maps, md settings
+  mutants                #One document per mutant entity 
+  processed_data         #Full collection of scavenged data per mutant 
+  projects               #Project data, residue maps, md settings, objects and definitions
 
  -VIEWS:
-  mutants_deltag         #Aggregation pipeline for energetics and mutant data
-  mutants_ready          #Auxiliaty aggregation
+  mutants_deltag         #Aggregation pipeline combining energetics and mutant data
+  mutants_ready          #Auxiliaty view for status updater
   mutants_status         #Aggregation for group mutants by project and status
+```
+
+###Query Examples
+```js
+use dyme
+db.mutants.find({status: "pending", id_project: 3}) #Queries pending mutants on Project 3.
+db.processed_data.find({id_project: 3, mutantID: 55}) #Queries all data for mutantID 55 of project 3
 ```
 
 For more information on collections and document structure can be found at the supplementary material of the DyME publication (pending)
