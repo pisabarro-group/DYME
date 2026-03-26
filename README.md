@@ -229,8 +229,8 @@ The database "dyme" hosts the following collections and views:
 ###Query Examples
 ```js
 use dyme
-db.mutants.find({status: "pending", id_project: 3}) #Queries pending mutants on Project 3.
-db.processed_data.find({id_project: 3, mutantID: 55}) #Queries all data for mutantID 55 of project 3
+db.mutants.find({status: "pending", id_project: 3})   //Queries pending mutants on Project 3.
+db.processed_data.find({id_project: 3, mutantID: 55}) //Queries all data for mutantID 55 of project 3
 ```
 
 For more information on collections and document structure can be found at the supplementary material of the DyME publication (pending)
