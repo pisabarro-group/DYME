@@ -1,10 +1,8 @@
 # DYME (Dynamic Mutagenesis Engine)
 
-This README covers installation and deployment. For scientific context and usage, see the DyME manual or publication.
-
 ## Overview
 
-DYME is a computational platform for automated large-scale molecular dynamics (MD) analysis and high-throughput mutational exploration. It orchestrates HTP mutagenesis, MD simulations and visual comparative analysis into a single workflow.
+DYME is a computational platform for automated large-scale molecular dynamics (MD) analysis and high-throughput mutational exploration. It orchestrates HTP mutagenesis, MD simulations and visual comparative analysis into a single workflow. This README covers installation, deployment and key technical details required to operate the platform.
 
 The system is made of two distributed components:
 
