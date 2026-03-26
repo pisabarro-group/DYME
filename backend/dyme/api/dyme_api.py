@@ -3,25 +3,20 @@
 DYME - Dynamic Mutagenesis Engine
 
 File:           dyme_api.py
-Description:    RESTful API entry point - GUI calls @app.routed functions with 
-                client side JS - always answers in JSON.
+Description:    RESTful API of DyME. Entry point. TCA calls functions through @app.routed 
+                always responds in JSON indicating component to act upon, the action name 
+                and response content.
 
-Purpose:        Hooks to WSGI server via Apache2 - Called from dyme_api.wsgi
+Purpose:        Hooks to WSGI server via Apache2 via dyme_api.wsgi
                 (See /etc/apache2/sites-enabled/dyme_api.conf)
                 
                 Some of the functions here were mirrored from Peter Eastman's 
-                openmm-setup package.. we only used flask to provide an API, 
-                not the whole Django app. API Our server hooks via Apache2.
+                openmm-setup package. We only used flask, for simplicity reasons.
                 
                 WARNING !!
-                mod_wsgi shared libraries for apache2 have to be compiled
-                for the exact same version of python in the CONDA environment
-                where DYME lives. Else, there is no communication between python 
-                in conda from WSGI module of apache2.
+                mod_wsgi shared libraries that ship with apache2 are linked against
+                different symbols. We used the mod provided by anaconda. 
                 
-                Make sure to add mod_wsgi package to anaconda and move the shared .so 
-                libraries to the local server LD_PATH (/usr/lib64 or whatever)
-
 Author:     
 Pedro Manuel Guillem Gloria <pedro_manuel.guillem_gloria@tu-dresden.de>
 Structural Bioinformatics Lab - BIOTEC - Pisabarro Group
@@ -89,10 +84,10 @@ app = Flask(__name__)
 app.config.from_object(__name__)
 app.secret_key = "fb05431127ead66f46f9b0a4894d1727836b902d71d4034dc12d428204678814"
 app.jinja_env.globals['mm'] = mm
-db = DymeDB("localhost")
+db = DymeDB("localhost") #The API will always run in the Main node container.
 
 
-#WIZARD STUFF - Public variables
+#WIZARD STUFF - "Global" variables
 uploadedFiles = {} #Holds uploaded files from the user
 fixer = None
 scriptOutput = None
@@ -111,6 +106,7 @@ pname = None
 #    'S55': "X",
 #    'R86': "Z",
 
+#A small 3 to 1 letter parser map for DyME.
 res3to1 = {'CY4': 'C', 'CY1': 'C','CY2': 'C','CY3': 'C','CYS': 'C', 'CYX': 'C',
   'HD1': 'H', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
   'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N',
@@ -175,7 +171,7 @@ aminoproperties = {
 	"TYR": {"Bulkiness": "Bulky", "Geometry": "Aromatic", "Chemistry": "Polar",       "Polarity": "Neutral",  "1LetterCode": "Y", "Hbond": "Both",     "HasSulfur": "No" }
     } #PENDING NON STANDARD DEFINITIONS TO EXPORT DATAFRAMES HOT ENCODING FOR MACHINE LEARNING
 
-    #Dictionary of DNA atoms
+#Dictionary of DNA nucleotide atoms
 dna_atoms = {
         'DA': {
             'ring': ['N1', 'N3', 'C5', 'N6', 'N7'],
@@ -194,7 +190,7 @@ dna_atoms = {
             'backbone': ['P', 'OP1', 'OP2', 'O5', 'O3', 'O4']
         }
     }
-
+#protein backbone atoms
 protein_atoms = ['N', 'CA', 'C', 'O']
 
 #MDSRV STUFF
@@ -255,7 +251,7 @@ def display_time(seconds, granularity=2):
         return ', '.join(result[:granularity])
 
 
-#GET Available leap sources. uses the path to the environment
+#GET Available Tleap sources. uses the path to the environment
 @app.route("/getLeapSources")
 def getLeapSources():
     options = "<option value='0'>Select to add...</option>"
@@ -271,7 +267,7 @@ def getLeapSources():
                 options += "<optgroup label='Amber Libs'>"
                 
             for file in os.listdir(pathleap+dir):
-                if ("pycache" not in file) and (".dat" not in file) and (".py" not in file):
+                if ("pycache" not in file) and (".dat" not in file) and (".py" not in file) and ("Makefile" not in file) and (".cmd" not in file):
                   options += "<option value='"+file+"'>"+file+"</option>\n" 
                 
             options += "</optgroup>"   

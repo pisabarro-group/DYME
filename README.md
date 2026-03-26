@@ -4,6 +4,8 @@
 
 DYME is a computational platform for automated large-scale molecular dynamics (MD) analysis and high-throughput mutational exploration. It orchestrates HTP mutagenesis, MD simulations and visual comparative analysis into a single workflow.
 
+This readme file contains technical details on install and deployment. For a scientific perspective to the platform usability, please refer to our publication or the DyME manual.
+
 The system is made of two distributed components:
 - **dyme_main**: A central server (Docker) hosting a central database, web UI and API
 - **dyme_node**: A worker container (Singularity/Apptainer) executing asynchronous MD and scavenging tasks
@@ -44,7 +46,7 @@ DyME runs exclusively in Linux (x86_64) systems. We highly recommend debian-base
 - **Storage**
   - 20GB for installing + building the system (at the main node server)
   - Enough space for hundreds of MD simulations (several GB to several TB)
-  - User must have have write-permissions in the shared partition
+  - User must have write-permissions in the shared partition
     
 - **Network**
   - All nodes (main and worker) should reside in the same network (recommended)
@@ -80,24 +82,26 @@ chmod a+x install.sh
 ./install.sh
 ```
 
-This commands will build:
+These commands will build:
 - A Docker image called `dyme_main` (This is your main server)
 - A Singularity `.sif` image called `dyme_node.sif` (This contains both worker nodes)
 
-The installer will also create the necesary directory structures in the directory PATH you provided as DyME main folder. It will be used as persistent storage (databases, MD trajectories, inputs, outputs, etc), and should be "accesible" from all nodes, as it binds to the internal directory `/dyme_root` in all nodes.
+The installer will also create the necesary directory structures in the directory PATH you provided as DyME main folder. It will be used as persistent storage (databases, MD trajectories, inputs, outputs, etc), and should be "accesible" from all nodes, as it binds to the internal directory `/dyme_root` in worker containers.
 
-Step 2- Upon completion, DyME should be running on your Docker server. You can access the UI by entering http://the_server_hostname:8080 in your browser.
+Step 2- Verify the Main Node is up
+
+Upon completion, DyME should be running on your Docker server. You can access the UI by entering http://the_server_hostname:8080 in your browser.
 
 
 ---
 
 ## Test Data
 
-If you would like to install the test-data, answer "y" when prompted to do so by the installer. The DyME test-data will be downloaded from here (https://zenodo.org/records/18014320) and loaded into your DyME install. It contains approx. ~11GB of MD simulations and database records.
+If you would like to install test-data, answer "y" when prompted to do so by the installer. The DyME test-data will be downloaded from here (https://zenodo.org/records/18014320) and loaded into your fresh DyME system. It contains approx. ~11GB of MD simulations and database records.
 
-**DO NOT DOWNLOAD OR MANUALLY HANDLE THE TEST-DATA IMPORT - THE INSTALLER WILL DO THIS FOR YOU**
+  **DO NOT DOWNLOAD OR MANUALLY HANDLE THE TEST-DATA IMPORT - THE INSTALLER WILL DO THIS FOR YOU**
 
-An example on interpreting the data can be found on the supplementary material of the DyME publication (link pending)
+A detailed example on interpreting the data can be found on the supplementary material of the DyME publication (link pending)
 
 ---
 
@@ -107,7 +111,7 @@ The main node runs on any server with Docker (by default, this is where you ran 
 
 ### Main node start
 
-Replace "/path/to/filesystem" with the folder you provided during installation.
+Replace "/path/to/filesystem" with the folder you provided during installation. If the shared directory is not bound to the internal /dyme_root folder, the container won't be able to access persistent data.
 
 ```bash
    docker run \
@@ -129,16 +133,18 @@ To stop the DyME Main node, execute the following cmd:
 
 ## Running Workers
 
-Worker nodes reside in the .sif container called `dyme_node.sif`. The container can execute either as MD node, or savenger node. Containers are fully **portable**. They can be copied to remote servers, HPC partitions or shared locations.
+Worker nodes reside in the .sif container called `dyme_node.sif` that was created during installation. The container can run either as MD node, or savenger node. Containers are fully **portable**. They can be copied to remote servers, HPC partitions or shared locations.
 
 - You will need Apptainer (or Singularity) installed to launch a worker node.
 - You can run an MD node and a scavenger node on the same server, on 2 separate containers.
-- The container can run manually from the console, or using a queue managers (i.e. SLURM).
-- SLURM batch files must be crafted by the user, following the rules of their respective HPC environment.
+- The container can run manually from the console, or using a queue manager (i.e. SLURM).
+- SLURM batch files must be crafted by the user for their respective HPC environment.
 
 
 ### Tip:
-DyME includes a wrapper script (**launch_node.sh**) to facilitate launching. Keep in mind the script requires the .sif container to be located in the same directory.
+DyME includes a wrapper script (**launch_node.sh**) to facilitate deployment. Keep in mind the script requires the .sif container to be located in the same directory. 
+
+The .sif file can be copied to a shared location. If so, modify the variable **$SIF_IMAGE** inside the script accordingly - so that the wrapper runs from everywhere within your environment.
 
 The syntax to use the wrapper is:
 
@@ -156,9 +162,9 @@ The syntax to use the wrapper is:
   - hostname or IP of the main node
 
 - `path`:
-  - shared directory mounted across all nodes
+  - path to shared directory mounted across all nodes
 
-If you would like to start the worker manually (using Apptainer), modify the required variables and execute the following command:
+Alternatively, to start the worker manually (using Apptainer), modify the required variables and run the following command:
 
 ```bash
  export BINDPATH=/path/to/shared/directory
@@ -177,7 +183,7 @@ If you would like to start the worker manually (using Apptainer), modify the req
 
 ### Examples
 
-Launching an MD node, with Main node hosted at 192.168.1.10, and DyME folder at /group/dyme_data
+Launching an MD node with Main node hosted at 192.168.1.10, and DyME folder at /group/dyme_data
 
 ```bash
  ./launch_node.sh MD 192.168.1.10 /group/dyme_data
@@ -194,11 +200,12 @@ You can redirect the output to your favorite log file or stdout. It will contain
 
 ## Accessing the DyME Database Manually
 
-DyME uses MongoDB as database engine. All components and active nodes communicate through it. The database can be accessed and browsed from Windows or Linux machines using CLI like "MongoDB Compass" or even low-level drivers like "pymongo".
+DyME uses MongoDB as database engine. All components and active nodes communicate through it. The database can be accessed using GUI tools like "MongoDB Compass" or even low-level drivers like "pymongo", from your own python scripts.
 
-- The database is open and has no admin username or password set.
+- The database is open and has no admin username or password set by default.
 - It is exposed through port `27017` at the Main Node server.
-- To connect to it, use a connection URI:
+- The DymeDB() class contains a wrapper you can re-use in your projects.
+- To connect to the database, use a connection URI:
 
 ```bash
  mongodb://IP_or_hostname_of_main_node:27017/?directConnection=true
@@ -210,40 +217,40 @@ More information on database collections and document structures can be found at
 
 ## Accessing MD trajectories, Inputs and Outputs
 
-Dyme nodes deposits MD simulations and assets in the shared folder provided during installation, specifically under the subfolder **/projects**. All Dyme projects follows the same directory structure:
+Dyme nodes deposit MD simulations and assets in the shared folder provided during installation, specifically under the subfolder **/projects**. Dyme projects follow the following directory structure:
 
 
 **Directory Structure**
 ```text
-/path/to/dyme_root/             # Shared folder for all nodes (dyme_root)
+/dyme_root
 ├── projects/                   # Root folder for all projects
 │   ├── 1/
 │   ├── 2/
 │   └── 3/                      # Example project folder
 │       ├── inputs/             # Initial input files (Original PDB and tleap scripts)
 │       ├── outputs/            # Reserved for future use
-│       └── mutants/            # Contains a folder per Mutant
+│       └── mutants/            # Contains a dedicated folder per MutantID
 │           ├── 1/
 │           ├── 2/
 │           └── 3/              # Example mutant folder
-│               ├── inputs/     # Generated MD input files (from preparation stage)
-│               └── outputs/    # MD and scavenging outputs (outputs of all workers)
+│               ├── inputs/     # Generated structures and input files for MD (from preparation stage)
+│               └── outputs/    # MD simulations and scavenging outputs 
 ```
 **Input files (per mutant):**
 ```text
 │               ├── inputs/
 │                    ├──ligand.prmtop                 #Ligand parameters/topology
 │                    ├──receptor.prmtop               #Receptor parameters/topology
-│                    ├──original_mutated.pdb          #PDB file including mutations 
+│                    ├──original_mutated.pdb          #Mutated PDB file 
 │                    ├──receptor_ligand.prmtop        #Complex parameters/topology 
 │                    ├──receptor_ligand.inpcrd        #Complex coordinates 
-│                    ├──receptor_ligand_wat.prmtop    #Hydrated complex parameters/topology
-│                    ├──receptor_ligand_wat.inpcrd    #Hydrated complex coordinates
-│                    ├──receptor_ligand_wat.pdb       #Hydrated complex PDB
-│                    ├──tleap.in                      #Generated Tleap script for mutant
+│                    ├──receptor_ligand_wat.prmtop    #Solvated complex parameters/topology
+│                    ├──receptor_ligand_wat.inpcrd    #Solvated complex coordinates
+│                    ├──receptor_ligand_wat.pdb       #Solvated complex PDB
+│                    ├──tleap.in                      #Generated Tleap generator input file
 │                    └── mmgbsa/    
-│                          ├──pairwise.in             #Generated MPBSA.py input configs
-│                          └──perresidue.in           #Generated MPBSA.py input configs
+│                          ├──pairwise.in             #Generated MMPBSA.py input configs
+│                          └──perresidue.in           #Generated MMPBSA.py input configs
 ```
 
 **Output files (per mutant):**
