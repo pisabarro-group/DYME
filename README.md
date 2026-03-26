@@ -1,14 +1,16 @@
 # DYME (Dynamic Mutagenesis Engine)
 
+This README covers installation and deployment. For scientific context and usage, see the DyME manual or publication.
+
 ## Overview
 
 DYME is a computational platform for automated large-scale molecular dynamics (MD) analysis and high-throughput mutational exploration. It orchestrates HTP mutagenesis, MD simulations and visual comparative analysis into a single workflow.
 
-This readme file contains technical details on install and deployment. For a scientific perspective to the platform usability, please refer to our publication or the DyME manual.
-
 The system is made of two distributed components:
-- **dyme_main**: A central server (Docker) hosting a central database, web UI and API
-- **dyme_node**: A worker container (Singularity/Apptainer) executing asynchronous MD and scavenging tasks
+
+**dyme_main**: A single server (Docker) hosting a central database, web UI and API
+**dyme_node**: A worker container (Singularity/Apptainer) executing asynchronous MD and scavenging tasks
+
 
 ---
 
@@ -202,10 +204,10 @@ You can redirect the output to your favorite log file or stdout. It will contain
 
 DyME uses MongoDB as database engine. All components and active nodes communicate through it. The database can be accessed using GUI tools like "MongoDB Compass" or even low-level drivers like "pymongo", from your own python scripts.
 
-- The database has no admin username or password set by default.
+- The database has no username or password set by default.
 - It is exposed through port `27017` at the Main Node server.
-- The DymeDB() class contains a wrapper you can re-use in your projects.
-- To connect to the database, use a connection URI:
+- The DymeDB() class can be re-used to manage DB connections.
+- To connect to the database use a connection URI:
 
 ```bash
  mongodb://IP_or_hostname_of_main_node:27017/?directConnection=true
