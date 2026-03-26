@@ -211,13 +211,28 @@ DyME uses MongoDB as database engine. All components and active nodes communicat
  mongodb://IP_or_hostname_of_main_node:27017/?directConnection=true
 ```
 
-More information on database collections and document structures can be found at the supplementary material of the DyME publication (pending)
+The database "dyme" has the following collections and views:
+
+```text
+ -COLLECTIONS:
+  default_settings       #System paths defined during install
+  mutants                #One document per mutant defintion (id_project / mutantID pair)
+  processed_data         #One collection of all scavenged data per mutant 
+  projects               #Project data, residue maps, md settings
+
+ -VIEWS:
+  mutants_deltag         #Aggregation pipeline for energetics and mutant data
+  mutants_ready          #Auxiliaty aggregation
+  mutants_status         #Aggregation for group mutants by project and status
+```
+
+For more information on collections and document structure can be found at the supplementary material of the DyME publication (pending)
 
 ---
 
 ## Accessing MD trajectories, Inputs and Outputs
 
-Dyme nodes deposit MD simulations and assets in the shared folder provided during installation, specifically under the subfolder **/projects**. Dyme projects follow the following directory structure:
+Worker nodes deposit MD simulations and assets in the shared folder provided during installation (dyme_root), specifically under the subfolder **/projects**. It follows the following structure:
 
 
 **Directory Structure**
@@ -249,8 +264,8 @@ Dyme nodes deposit MD simulations and assets in the shared folder provided durin
 │                    ├──receptor_ligand_wat.pdb       #Solvated complex PDB
 │                    ├──tleap.in                      #Generated Tleap generator input file
 │                    └── mmgbsa/    
-│                          ├──pairwise.in             #Generated MMPBSA.py input configs
-│                          └──perresidue.in           #Generated MMPBSA.py input configs
+│                          ├──pairwise.in             #MMPBSA.py input configs
+│                          └──perresidue.in           #MMPBSA.py input configs
 ```
 
 **Output files (per mutant):**
@@ -267,7 +282,7 @@ Dyme nodes deposit MD simulations and assets in the shared folder provided durin
 │                    └──output_perresidue_decomp.dat  #MMPBSA.py decomposition
 ```
 
-The scavenging outputs of intermolecular contacts, water mapping and RMSD data are stored directly in the Database.
+Scavenging outputs for intermolecular contacts, water sites and RMSD data are stored directly in the Database (collection "processed_data").
 
 ---
 
