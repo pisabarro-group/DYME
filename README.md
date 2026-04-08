@@ -8,10 +8,10 @@
 
 DYME is a computational platform for automated large-scale molecular dynamics (MD) analysis and high-throughput mutational exploration. It orchestrates HTP mutagenesis, MD simulations and visual comparative analysis into a single workflow. This README covers installation, deployment and key technical details required to operate the platform.
 
-The system is made of two distributed components:
+DyME is made of two components:
 
-**dyme_main**: A single server (Docker) hosting a central database, web UI and API  
-**dyme_node**: A worker container (Singularity/Apptainer) executing asynchronous MD and scavenging tasks
+**dyme_main**: The main node (Docker container) hosting a central database, web UI and API  
+**dyme_node**: Worker nodes (Singularity/Apptainer container) executing asynchronous MD and Scavenging tasks
 
 ---
 
@@ -24,7 +24,8 @@ The system is made of two distributed components:
     - `27017` (MongoDB access)
 
 - **Worker Nodes (runs with Apptainer/Singularity)**
-  - Deployed in as many servers as desired. Executes tasks in two modes:
+  - Deployed in as many servers as desired
+  - Executes tasks in two modes:
     - `MD` → runs simulations (GPU-only)
     - `scavenger` → processes completed MD trajectories (CPU-only)
 
@@ -32,34 +33,34 @@ The system is made of two distributed components:
   - All nodes access a common filesystem 
   - Recommended: network-mounted directory (NFS/Beegfs/Lustre,etc)
 
-DyME runs exclusively in Linux (x86_64) systems. We highly recommend debian-based (Ubuntu ≥ 22.04) or RHEL-based distros. Other flavors could work but are not currently supported by the installer.
+DyME runs exclusively in Linux (x86_64) systems. We highly recommend debian-based (Ubuntu ≥ 22.04) or RHEL-based distros. Other Linux flavors could work but are not currently supported by the installer.
 
 ---
 
 ## Minimum Hardware Recommendations
 
 - **Main Node**
-  - 8 to 32 CPU cores (scale for best performance)
-  - 8 to 128 GB RAM
+  - 8 cores (16 or more recommended)
+  - 16GB RAM (64 or more for best performance)
 
 - **Worker Nodes**
-  - At least 8 CPUs per scavenger node (up to 256 CPUs per server recommended)
-  - At least 1 GPU card per MD node (currently CUDA-compatible cards only)
+  - At least 8 CPUs per scavenger node (up to 256 cores per server recommended)
+  - At least 1 GPU card per MD node (currently CUDA-compatible cards are supported)
   
 - **Storage**
-  - 20GB for installing + building the system (at the main node server)
-  - Enough space for hundreds of MD simulations (several GB to several TB)
-  - User must have write-permissions in the shared partition
+  - 20GB for installing and building the base system (at the main node server)
+  - Shared partition for storing hundreds of MD simulations (several GB to several TB)
+  - User must have write-permission in the shared partition
     
 - **Network**
-  - All nodes (main and worker) should reside in the same network (recommended)
-  - Distributed networks will work as long as the worker nodes can ping the main node
+  - All nodes (main and worker) should reside in the same LAN or bridged network (recommended)
+  - Bridged networks (HPC) will work as long as the worker nodes can reach the main node server
       
 ---
 
 ## Build and Install Requirements
 
-The DyME installer and containers depend on third-party components:
+The DyME installer will check for mandatory third-party components:
 
 - Docker (for building and hosting the main node)
 - BuildX (Docker build plugin)
@@ -68,15 +69,15 @@ The DyME installer and containers depend on third-party components:
 - Salilab's MODELLER license (for model creation)  
   (Request a free academic license key here: https://salilab.org/modeller/registration.html)
 
-The installer will check for pre-requisites and attempt to install missing dependencies (Docker, BuildX Apptainer, curl, and others). It will also verify your user has permissions to run docker containers. If the installer is unable to solve dependencies, install them manually and run the installer again.
+The installer will attempt to install missing dependencies (Docker, BuildX Apptainer, curl, and others),and verify your user has permissions to run docker containers. If the installer was unable to solve dependencies, install them manually and run the installer again.
 
 ---
 
 ## Installation
 
-The DyME installer automatically builds the platform for you. To begin, login to the machine that will act as "Main Node" and navigate to a suitable directory. Make sure you have at least 20Gb of free space available for building and storing container images.
+The DyME installer automatically builds the containers for you. To begin, login to the machine that will act as "Main Node" and navigate to a suitable directory. Make sure you have at least 20Gb of free space available for building and storing container images.
 
-Step 1 - Clone the DYME repository, and execute the installer:
+**Step 1 - Clone the DYME repository, and execute the installer:**
 
 ```bash
 git clone https://github.com/pisabarro-group/DYME.git
@@ -86,35 +87,35 @@ chmod a+x install.sh
 ```
 
 This action should yield:
-- A Docker image called `dyme_main` (This is your main server container)
-- A Singularity `.sif` image called `dyme_node.sif` (This contains the worker node container)
+- A Docker image called `dyme_main` (This is the main node container)
+- A Singularity `.sif` image called `dyme_node.sif` (This is the worker node container)
 
-The installer will create the necesary folders in the directory provided as shared folder (dyme_root). It will be used as persistent storage (databases, MD trajectories, inputs, outputs, etc) and should be "accesible" from all nodes - as it binds to the internal directory `/dyme_root` in containers.
+The installer will create the necesary folders in the shared directory provided (dyme_root). It will be used as persistent storage (databases, MD trajectories, inputs, outputs, etc) and should be "accesible" from all nodes. At boot time, this folder will bind to the internal directory `/dyme_root` in containers.
 
-Step 2- Verify the Main Node is up
+**Step 2- Verify the Main Node is up**
 
-Upon completion, the DyME Main node should be running on Docker. You can access the UI by entering http://the_server_hostname:8080 in your browser.
+Upon completion, the Main node should be up and running on Docker. You can access the UI by entering **http://the_server_hostname:8080** in your browser.
 
 
 ---
 
 ## Test Data
 
-To install test-data, answer "y" when prompted to do so by the installer. It will be downloaded from here (https://zenodo.org/records/18014320) and loaded into your fresh DyME system automatically. It contains two projects and approx. ~11GB of MD simulations, plus the corresponding database records.
+To install test-data, answer "y" when prompted to do so. The installer will automatically download the data from (https://zenodo.org/records/18014320) and load it into your fresh DyME system. The file contains two DyME projects and approx. ~11GB of MD simulations and database records.
 
   **DO NOT DOWNLOAD OR MANUALLY HANDLE THE TEST-DATA - THE INSTALLER WILL DO THIS FOR YOU**
 
-A detailed example on interpreting the test-data can be found on the supplementary material of the DyME publication (link pending)
+A detailed example on interpreting the test-data is available in supplementary material S3 Appendix of the DyME publication (link pending)
 
 ---
 
 ## Running The Main Node
 
-The main node runs on any server with Docker (by default, this is where you ran the installer). The following commands control the container (start or stop). Keep in mind this node must remain active for remote workers to perform tasks, access the database, or using the DyME-TCA web to explore results.
+The main node can run on any server with Docker > 27. The following commands control the container (start or stop). Keep in mind the main node must remain active for remote workers to perform tasks, access the database, or for using the TCA for comparative analysis.
 
 ### Main node start
 
-Replace "/path/to/filesystem" with the folder (dyme_root) provided during installation. The shared folder must be bound to the internal /dyme_root folder of containers, else they won't be able to access persistent data.
+Replace "/path/to/filesystem" with the shared folder provided during installation. The shared folder will be bound to the internal /dyme_root folder of containers to access persistent data.
 
 ```bash
    docker run \
@@ -136,18 +137,18 @@ To stop the DyME Main node, execute the following cmd:
 
 ## Running Workers
 
-Worker nodes reside in the .sif container called `dyme_node.sif` created during installation. The container can run either as MD node, or as savenger node. The container is fully **portable**. It can be copied to remote servers, HPC partitions or shared locations.
+Worker nodes reside in the .sif container called `dyme_node.sif`, created during installation. The container can run as MD node or as savenger node. This container is fully **portable**. It can be copied to remote servers, HPC partitions or shared locations for ubiquitous access.
 
-- You will need Apptainer (or Singularity) on servers to launch a worker node
-- You can run both nodes (MD and scavenger) on the same server by booting 2 separate containers
-- The container can run manually (from the console) or using a queue manager (i.e. SLURM)
+- You will need Apptainer (or Singularity) for your devices to launch worker nodes
+- You can run both node types (MD and scavenger) on the same server by booting 2 separate containers
+- Container can be run manually (from the console) or using a queue manager (i.e. SLURM)
 - SLURM batch files must be crafted by the user for their respective HPC environment
 
 
 ### Tip:
-DyME includes a wrapper script (**launch_node.sh**) to facilitate deployment. Keep in mind the script requires the .sif container to be located in the same directory. 
+DyME ships a wrapper script (**launch_node.sh**) to facilitate worker node deployment. Keep in mind the script requires the .sif container to be on the same directory, unless the internal path is changed.
 
-The .sif file can be copied to a shared location. If so, modify the variable **$SIF_IMAGE** inside the script so that it points to the full path to the file. This way the wrapper will work from any server within your environment.
+For example, the .sif file can be copied to a shared location. If so, modify the variable **$SIF_IMAGE** inside the script to the full path to the file. This way the wrapper will worker nodes from any server within your environment.
 
 The syntax to use the wrapper is:
 
@@ -166,7 +167,6 @@ The syntax to use the wrapper is:
 
 - `path`:
   - path to shared directory mounted across all nodes
-
 
 To start a worker node manually (using Apptainer directly), modify the required variables and run the following commands:
 
@@ -228,14 +228,14 @@ The database "dyme" hosts the following collections and views:
   mutants_status         #Aggregation for grouping mutants by project and status
 ```
 
-###Query Examples
+###Query Examples (mongosh)
 ```js
 use dyme
 db.mutants.find({status: "pending", id_project: 3})   //Queries pending mutants on Project 3.
-db.processed_data.find({id_project: 3, mutantID: 55}) //Queries all data for mutantID 55 of project 3
+db.processed_data.find({id_project: 3, mutantID: 55}) //Queries all scavenged data for mutantID 55 of project 3
 ```
 
-For more information on collections and document structure can be found at the supplementary material of the DyME publication (pending)
+More information on collections and document structure can be found at the supplementary material of the DyME publication (pending)
 
 ---
 
@@ -291,15 +291,16 @@ Worker nodes deposit MD simulations and assets in the shared folder (dyme_root) 
 │                    └──output_perresidue_decomp.dat  #MMPBSA.py decomposition
 ```
 
-Scavenging outputs for intermolecular contacts, water sites and RMSD data are stored directly in the Database (collection "processed_data").
+* Intermolecular contacts, water sites and RMSD data are stored directly in the Database (collection "processed_data").
 
 ---
 
 ## Execution Behavior
 
 ### The MD Node
+- Continuously polls database
 - Runs MD simulation workloads
-- Continuously polls and updates the database
+- Selects mutants with status = "pending"
 - Uses GPU acceleration (`--nv`)
 - Deploys ONE simulation per idle GPU card (unless told otherwise)
 - Safe for parallel multi-node execution (atomic DB claiming)
