@@ -9,32 +9,6 @@
 # BIOTEC - Pisabarro Group
 # Technische Universität Dresden, 2026
 #
-# Licensing:
-#
-# Copyright (c) 2026 Pedro Guillem, Gloria Ruiz-Gomez, MT-Pisabarro
-#
-# This software is licensed for academic, educational, and non-commercial research use only under 
-# the GPLv3 License. You may use, modify, and distribute the source code for academic purposes 
-# provided you:
-#   - Retain this copyright notice
-#   - Cite the author(s) in publications using this software
-#   - Comply with any third-party licenses (see publication for a full list of libraries)
-#
-# Commercial use (including in proprietary software, SaaS platforms, or consulting services)
-# requires a separate commercial license agreement from the author.
-#
-# Note:
-# This distribution includes third-party components under MIT, BSD, and GPL licenses.
-# When using these components, you must comply with their respective licenses as described in
-# LICENSES.txt.
-#
-# !!!!IMPORTANT!!!:
-# DyME is meant to run in local networks where internet security is not a concern.
-# This tool exposes a ports for web access, a database port without security and an API.
-# Be aware none of these components have been hardened for IT security standards.
-#
-# BY USING DYME YOU ACCEPT THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
-# AND YOU USE IT UNDER YOUR OWN RISK.
 
 set -o errexit
 set -o nounset
