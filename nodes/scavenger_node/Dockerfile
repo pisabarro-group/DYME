@@ -13,23 +13,6 @@
 #Technische Universität Dresden
 #June 2024
 
-#Licensing:
-#   This software is free for academic use, under the following considerations:
-
-# - You may install and use DyME privately and academically, under the terms of the GPLv3 license.
-# - Cite this work if you use it for academic research.
-# - You must be familiar and respect the licensing of all dependencies, particularly Modeller (Salilab).
-# - You are not allowed to distribute this tool on your own, or embed its code in third party tools.
-#
-#   IMPORTANT!
-# - You are not authorized to host a public web server using this software (and you wouldn't want to). 
-#   DyME is meant to run in local networks where security is not a concern. It was designed to do science, 
-#   not to comply with internet secutiry standards.
-#
-#   An Enterprise grade version of this tool is available. Please contact the Structural Bioinformatics 
-#   Laboratory for more information.
-###
-
 
 # Use Ubuntu 20.04 as base
 FROM ubuntu:20.04
