@@ -13,20 +13,6 @@
 # Technische Universität Dresden
 # June 2024
 
-#Licensing:
-# This software is free to use under the GPLv3 license, under the following considerations:
-
-# - You may install and use DyME academically under the terms of the GPLv3 license.
-# - Commercial usage is not allowed. If you use DyME for profit, you need to get a license.
-# - Cite this work if you used it for your research.
-# - You must be familiar with the licensing of all dependencies, particularly Anaconda and Modeller (Salilab).
-# - You are not allowed to distribute this tool to third parties, or use/embed its code in third party tools for profit.
-#
-#   IMPORTANT!
-# - Host a public web server using this software is not autorized (and you wouldn't want to).
-#   DyME is meant to run in local networks where security is not a concern. It was designed to do science, 
-#   not to comply with internet security standards.
-###
 FROM nvidia/cuda:12.3.0-base-ubuntu22.04
 
 LABEL authors="Pedro Guillem-Gloria <pedro_manuel.guillem_gloria@tu-dresden.de>"
