@@ -90,7 +90,7 @@ This action should yield:
 - A Docker image called `dyme_main` (This is the main node container)
 - A Singularity `.sif` image called `dyme_node.sif` (This is the worker node container)
 
-The installer will create the necesary folders in the shared directory provided (dyme_root). It will be used as persistent storage (databases, MD trajectories, inputs, outputs, etc) and should be "accesible" from all nodes. At boot time, this folder will bind to the internal directory `/dyme_root` in containers.
+The installer will create the necessary folders in the shared directory provided (dyme_root). It will be used as persistent storage (databases, MD trajectories, inputs, outputs, etc) and should be "accesible" from all nodes. At boot time, this folder will bind to the internal directory `/dyme_root` in containers.
 
 **Step 2- Verify the Main Node is up**
 
