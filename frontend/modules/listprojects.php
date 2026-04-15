@@ -7,9 +7,6 @@
  * This file is part of the <DYME> project.
  * 
  ** This software is licensed under the **GNU General Public License v3 (GPLv3)**
- ** for academic and scientific purposes only**
- *
- * This software may NOT be used for commercial purposes without a **separate commercial license**  
  * 
  * License: See LICENSE file in the repository.
  * Repository: https://github.com/pguillem/DYME
