@@ -316,8 +316,7 @@ Worker nodes deposit MD simulations and assets in the shared folder (dyme_root) 
 
 ## Citation
 
-If you use DYME in your research, please cite:
-
-[Paper / preprint / DOI]
+DYME is currently undergoing peer review.
+Preprint: (https://www.biorxiv.org/content/10.64898/2026.04.10.717642v1)
 
 ---
