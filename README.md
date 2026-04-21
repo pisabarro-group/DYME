@@ -6,7 +6,10 @@
 
 ## Overview
 
-DYME is a computational platform for automated large-scale molecular dynamics (MD) analysis and high-throughput mutational exploration. It orchestrates HTP mutagenesis, MD simulations and visual comparative analysis into a single workflow. This README covers installation, deployment and key technical details required to operate the platform.
+DYME is a computational platform for automated large-scale molecular dynamics (MD) analysis and high-throughput mutational exploration. It orchestrates HTP mutagenesis, MD simulations and visual comparative analysis into a single workflow. 
+
+This README covers installation, deployment and key technical details required to operate the platform.
+A separate [USER MANUAL (PDF)](docs/DyME_User_Manual.pdf) is available for download.
 
 DyME is made of two components:
 
