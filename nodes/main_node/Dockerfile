@@ -187,7 +187,7 @@ RUN ln -s ../sites-available/dyme-api.conf dyme-api.conf
 RUN rm -f ../sites-available/000-default.conf 000-default.conf
 RUN ln -s /dyme_root/projects /dyme_base/frontend/img/projects
 RUN chown -R www-data:www-data /dyme_root/projects
-RUN chmod -R 775 /dyme_root/projects
+RUN chmod -R 777 /dyme_root/projects
 
 WORKDIR /
 #RUN a2enmod wsgi

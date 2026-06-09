@@ -531,7 +531,8 @@ download_tar() {
     curl -L --fail --output "$TAR_FILE" "$ZENODO_URL"
 
     info "Unpacking MD trajectories into projects folder..."
-    tar -xf "$TAR_FILE" -C "$DYME_PATH/projects"
+    tar -xf "$TAR_FILE" -C "$DYME_PATH/projects" --no-same-permissions --no-same-owner
+    chmod -R 777 "$DYME_PATH/projects"
 
     info "Loading test data records into database..."
     docker exec dyme_main mongoimport --db dyme --collection projects --file /dyme_backup/projects.json --jsonArray

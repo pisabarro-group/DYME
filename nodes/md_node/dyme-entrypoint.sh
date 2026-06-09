@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 mkdir -p /dyme_root/logs /dyme_root/data/db /dyme_root/projects /dyme_root/nodes/source /dyme_root/database/mongodb
+chmod -R 777 /dyme_root/projects
 
 init_conda() {
     echo "Initializing DYME environment, please wait"
