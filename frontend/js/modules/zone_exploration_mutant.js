@@ -1941,6 +1941,17 @@ function resetZoom_pairwise(){
 
 //Renders anchorpoint buttons below NGL canvas
 function renderAnchorPoints(){
+    // Collect all chain names that NGL actually loaded
+    // Pedro 2026 - Fix NGL loading all residues in a defualt chain A, instead of following chains inside the PDB
+    var structure_data = molStructure.compList[0].structure;
+    var chain_store = structure_data.chainStore;
+    var loaded_chain_names = new Set();
+
+    for (var chain_index = 0; chain_index < chain_store.count; chain_index++) {
+        var chain_name = chain_store.getChainname(chain_index);
+        loaded_chain_names.add(chain_name);
+    }
+    
     var btn = ''
     Object.entries(residuemap).forEach(function(res){
         res[1].forEach(function(chain){
@@ -1950,6 +1961,10 @@ function renderAnchorPoints(){
                     resid   = chain["resno_NGL"]
                     origresname = to1[chain["name"]]
                     ch   = chain["chain"]
+                    // Fall back to "A" if the chain from residuemap is not in the loaded structure by NGL (bug fix)
+                    if (!loaded_chain_names.has(ch)) {
+                        ch = "A";
+                    }
                     btn += '<button class="btn btn-orange btn-sm" onclick="focusOnAnchor(\''+ch+":"+resid+'\')">'+origresname+num+'</button> '
                 }
             }
