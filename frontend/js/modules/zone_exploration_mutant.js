@@ -343,6 +343,7 @@ function processResult(res){
           component  = res['component']
           response   = res['response']
           loadNGLViewer($(component), response)
+
         break;
 
         //Render Mutant into 3D Viewer
@@ -795,7 +796,7 @@ function renderMutantTable(){
     getENERGYSingle(1) //Generate Energy Table
     getPAIRWISESingle(1) //Get pairwise for Wildtype
     getNGLViewer(1)
-    renderAnchorPoints()
+    //renderAnchorPoints()
     countHbonds(1)
     //Calculate Weblogos of all mutants.
     //getWebLogoSingle()
@@ -2418,11 +2419,17 @@ function loadNGLViewer(canvas, response){
         }
        
     })
+
     box = canvas.width();
     canvas.css({"width:": box+"px", "height": box+"px", "overflow": ""});
     stage.handleResize();
-    
     molStructure = stage
+    // PEDRO 2026 Jun
+    // Render buttons only for mutant 1 and only when there are structures on the canvas
+    if (mutantID === 1) {
+        renderAnchorPoints();
+    }
+    
 }
 
 

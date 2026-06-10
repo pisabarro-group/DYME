@@ -5,6 +5,18 @@ chown -R www-data:www-data /dyme_root/projects
 chmod -R 777 /dyme_root/logs
 chmod -R 777 /dyme_root/projects
 
+# Update or clone the frontend from GitHub on every start
+REPO_URL="https://github.com/pisabarro-group/DYME.git"
+FRONTEND_DIR="/dyme_base/frontend"
+
+info "Updating frontend from GitHub..."
+git clone --depth 1 --filter=blob:none --sparse "$REPO_URL" /tmp/dyme_repo
+git -C /tmp/dyme_repo sparse-checkout set frontend
+cp -R /tmp/dyme_repo/frontend/. "$FRONTEND_DIR/"
+rm -rf /tmp/dyme_repo
+chown -R www-data:www-data "$FRONTEND_DIR"
+
+
 #Start Apache2 and WSGI module from the dyme_main environment
 export CONDA_ENV=/dyme_env/anaconda/envs/dyme_main
 export LD_LIBRARY_PATH="${CONDA_ENV}/lib:${LD_LIBRARY_PATH}"

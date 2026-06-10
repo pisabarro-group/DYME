@@ -165,7 +165,8 @@ RUN set -eux; \
     apt-get install -y --no-install-recommends \
         apache2 \
         libapache2-mod-php \
-        libapache2-mod-wsgi-py3; \
+        libapache2-mod-wsgi-py3 \
+        git; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
 

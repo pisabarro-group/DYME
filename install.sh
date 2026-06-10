@@ -532,7 +532,13 @@ download_tar() {
 
     info "Unpacking MD trajectories into projects folder..."
     tar -xf "$TAR_FILE" -C "$DYME_PATH/projects" --no-same-permissions --no-same-owner
-    chmod -R 777 "$DYME_PATH/projects"
+    #chmod -R 777 "$DYME_PATH/projects"
+
+    #PEDRO 2026 Jun
+    #Container has ownership of the folder at this point, but we are loading an external TAR as a non root user.
+    #We execute this from within the running container, so that the permissions of new files are granted
+    #to the API inside the container
+    docker exec dyme_main chmod -R 777 /dyme_root/projects
 
     info "Loading test data records into database..."
     docker exec dyme_main mongoimport --db dyme --collection projects --file /dyme_backup/projects.json --jsonArray
