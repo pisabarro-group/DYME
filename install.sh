@@ -267,41 +267,46 @@ install_apptainer_rhel() {
 }
 
 ensure_docker_service_running() {
+
     if ! have_cmd docker; then
         return 1
     fi
 
+    # Docker is accessible already — nothing to do
     if run_quiet docker info; then
         return 0
     fi
 
     warn "Docker is installed but not currently usable by the current user."
 
+    # Try enabling and starting the service via systemctl
     if [ -n "$SUDO" ]; then
         info "Attempting to enable and start the Docker service..."
         $SUDO systemctl enable docker >/dev/null 2>&1 || true
         $SUDO systemctl start docker >/dev/null 2>&1 || true
     fi
 
+    # Check again after service start
     if run_quiet docker info; then
         return 0
     fi
 
-    if [ -n "$SUDO" ]; then
-        warn "Attempting to add user '$USER' to the docker group..."
-        $SUDO groupadd -f docker >/dev/null 2>&1 || true
-        $SUDO usermod -aG docker "$USER" || true
+    # Add user to docker group if not already a member
+    if ! groups | grep -q docker; then
+        if [ -n "$SUDO" ]; then
+            info "Adding user '$USER' to the docker group..."
+            $SUDO groupadd -f docker >/dev/null 2>&1 || true
+            $SUDO usermod -aG docker "$USER" || true
+
+            info "Re-executing installer with docker group active (no logout needed)..."
+            exec sg docker "$0"
+        fi
     fi
 
-    info "Re-checking Docker access in the current session..."
-    if run_quiet docker info; then
-        return 0
-    fi
-
+    # If we get here, group was already set but docker still doesn't work
     echo ""
     warn "Docker still cannot be executed by the current user in this session."
     warn "Please log out and log in again, then rerun this installer."
-    warn "If Docker still does not work after that, please check your system configuration manually."
     return 1
 }
 
