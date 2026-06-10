@@ -168,30 +168,79 @@ install_packages_rhel() {
     "$SUDO" "$PKG_MANAGER" install -y "$@"
 }
 
+#FIX - Add the actual repo in Ubuntu 24
 install_docker_debian() {
     info "Attempting to install Docker and buildx on Debian/Ubuntu..."
 
-    if install_packages_apt ca-certificates curl gnupg lsb-release docker.io docker-buildx-plugin; then
+    # First try the distro's default repos (may work on some systems <22)
+    if install_packages_apt docker.io docker-buildx-plugin; then
         return 0
     fi
 
-    warn "Distro package install failed. Trying fallback packages..."
-    install_packages_apt ca-certificates curl gnupg lsb-release docker.io || return 1
+    warn "Default repo install failed. Trying Docker's official repository..."
 
-    return 0
+    # Ensure keyrings directory exists
+    $SUDO mkdir -p /etc/apt/keyrings
+
+    # Remove any broken previous attempt
+    $SUDO rm -f /etc/apt/keyrings/docker.gpg
+    $SUDO rm -f /etc/apt/sources.list.d/docker.list
+
+    # Download and store Docker's GPG key
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+        $SUDO gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    $SUDO chmod a+r /etc/apt/keyrings/docker.gpg
+
+    # Detect Ubuntu codename (use lsb_release, fall back to 'noble')
+    local ubuntu_codename
+    ubuntu_codename=$(lsb_release -cs 2>/dev/null || echo "noble")
+
+    # Add Docker's official apt repository
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+https://download.docker.com/linux/ubuntu ${ubuntu_codename} stable" | \
+        $SUDO tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+    # Invalidate the apt cache so the new repo is picked up
+    $SUDO apt-get update -y
+
+    # Install Docker engine and buildx from the official repo
+    if $SUDO apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin; then
+        return 0
+    fi
+
+    warn "Docker official repo install also failed."
+    return 1
 }
 
+#FIX - Add the actual repo in Ubuntu 24 for apptainer
 install_apptainer_debian() {
     info "Attempting to install Apptainer on Debian/Ubuntu..."
 
+    # First try default repos (unlikely to work on Ubuntu 24.04 but worth trying)
     apt_update_once
-
-    if install_packages_apt apptainer; then
+    if $SUDO apt-get install -y apptainer; then
         return 0
     fi
 
     warn "Package 'apptainer' not found in standard repositories."
-    warn "On some Debian-based systems, Apptainer is not available from default repos."
+    warn "Trying Apptainer's official PPA..."
+
+    # add-apt-repository requires software-properties-common
+    if ! have_cmd add-apt-repository; then
+        $SUDO apt-get install -y software-properties-common || {
+            warn "Could not install software-properties-common"
+            return 1
+        }
+    fi
+
+    # Add the official Apptainer PPA and install
+    $SUDO add-apt-repository -y ppa:apptainer/ppa
+    $SUDO apt-get update -y
+    if $SUDO apt-get install -y apptainer; then
+        return 0
+    fi
+
+    warn "Apptainer PPA install also failed."
     return 1
 }
 
