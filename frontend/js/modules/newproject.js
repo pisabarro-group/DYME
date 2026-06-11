@@ -624,15 +624,20 @@ function fillLeapOptions(){
 }
 
 function handleAddleapSource(selected){
-      a = selected.value
-    ico = "<i class='fa fa-check text-primary'></i>"
-    can = "<button class='btn btn-xs btn-icon float-end' type='button' onclick='this.parentElement.remove(this);remleapsource(a)'><i class='fa fa-times'></i></button>";
-    opt = "<li class='list-group-item'>"+ico+' '+a+' '+can+"</li>";
-    
-    $("#leapSources").val($("#leapSources option:first").val());
-    $("#leapSourcesList").append(opt);
-    $("#leapSourcesContent").append("<option value='"+a+"' selected>"+a+"</option>");
-    
+
+    a = selected.value
+
+    if(a != "" && a != "0"){
+        ico = "<i class='fa fa-check text-primary'></i>"
+        // Embed the actual value of a into the onclick string directly
+        can = "<button class='btn btn-xs btn-icon float-end' type='button' onclick='this.parentElement.remove();remleapsource(\""+a+"\")'><i class='fa fa-times'></i></button>";
+        opt = "<li class='list-group-item'>"+ico+' '+a+' '+can+"</li>";
+
+        // Reset Select2 back to the first option
+        $("#leapSources").val($("#leapSources option:first").val()).trigger("change");
+        $("#leapSourcesList").append(opt);
+        $("#leapSourcesContent").append("<option value='"+a+"' selected>"+a+"</option>");
+    }
 }
 
 $("#leapFiles").change(function(){
@@ -647,7 +652,7 @@ $("#leapFiles").change(function(){
 });
 //Updates leapSourcesContent hidden selector (this is what sends the array of selected leap sources)
 function remleapsource(val){
-    alert(val)
+    //alert(val)
     $("#leapSourcesContent option[value='"+val+"']").remove();
 }
 
