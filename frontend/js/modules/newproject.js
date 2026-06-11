@@ -246,6 +246,16 @@ window.addEventListener( "resize", function( event ){
                 allowClear: true,
                 width: "100%"
             });
+            //Places cursor on selector when component is opened
+            $("#leapSources").on("select2:open", function() {
+                document.querySelector(".select2-search__field").focus();
+            });
+            //Use esc to close component
+            $(document).on("keydown", function(event) {
+                if (event.key === "Escape") {
+                    $("#leapSources").select2("close");
+                }
+            });
         break;
 
         case "gotoStep2":
