@@ -607,6 +607,7 @@ download_tar() {
         'db.projects.updateOne({id_project: 50}, {$set: {project_folder: "/dyme_root/projects/50"}})'
 
     info "Test data load complete."
+    #docker exec dyme_main chmod -R 777 /dyme_root/projects
 }
 
 ask_download() {

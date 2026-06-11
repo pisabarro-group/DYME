@@ -182,6 +182,7 @@ COPY ./frontend /dyme_base/frontend
 COPY ./nodes/source/ /dyme_base/backend/dyme
 COPY ./backend/dyme/api /dyme_base/backend/dyme/api
 
+RUN chown -R www-data:www-data /dyme_base/backend   # add this line
 RUN chown -R www-data:www-data /dyme_base/frontend
 
 WORKDIR /etc/apache2/sites-enabled/

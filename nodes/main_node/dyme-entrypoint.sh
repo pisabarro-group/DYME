@@ -2,8 +2,11 @@
 mkdir -p /dyme_root/logs /dyme_root/data/db /dyme_root/projects /dyme_root/nodes/source /dyme_root/database/mongodb
 chown -R mongodb:mongodb /dyme_root/logs /dyme_root/database/mongodb
 chown -R www-data:www-data /dyme_root/projects
+chown -R www-data:www-data /dyme_base/backend
+
 chmod -R 777 /dyme_root/logs
 chmod -R 777 /dyme_root/projects
+chmod -R 755 /dyme_base/backend
 
 # Update or clone the frontend from GitHub on every start
 REPO_URL="https://github.com/pisabarro-group/DYME.git"

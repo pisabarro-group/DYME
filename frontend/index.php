@@ -74,6 +74,9 @@ if($_GET["s"] == "mainproject" || $_GET["s"] == "mainproject_rest"){
         
 
         <style>
+            html {
+                 font-size: 14px;
+             }
             .minibox {
                 height: 15px;
                 width: 15px;
