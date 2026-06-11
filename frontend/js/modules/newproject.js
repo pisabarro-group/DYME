@@ -241,6 +241,11 @@ window.addEventListener( "resize", function( event ){
         break;
         case "fillLeapOptionsSelect":
             $("#leapSources").html(res.response);
+            $("#leapSources").select2({
+                placeholder: "Select to add...",
+                allowClear: true,
+                width: "100%"
+            });
         break;
 
         case "gotoStep2":
