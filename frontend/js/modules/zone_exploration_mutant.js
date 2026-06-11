@@ -2219,7 +2219,8 @@ function loadNGLViewer(canvas, response){
         })
     })
     seleall = allres[0]+"-"+allres[allres.length-1]
-    
+    molStructure = stage
+
     //Load PDB info stage
     stage.loadFile( stringBlob, { ext: "pdb" , defaultRepresentation: false, name: mutantIDname} ).then(function(o){
         //molStructure.clearRepresentations();
@@ -2417,18 +2418,18 @@ function loadNGLViewer(canvas, response){
             //let transformedSpheres = transformCoordinates(spherePositions1, matrix);
             //addSpheres(transformedSpheres);  
         }
+
+        // PEDRO 2026 Jun
+        // Render buttons only for mutant 1 and only when there are structures on the canvas
+        if (mutantID === 1) {
+            renderAnchorPoints();
+        }
        
     })
 
     box = canvas.width();
     canvas.css({"width:": box+"px", "height": box+"px", "overflow": ""});
-    stage.handleResize();
-    molStructure = stage
-    // PEDRO 2026 Jun
-    // Render buttons only for mutant 1 and only when there are structures on the canvas
-    if (mutantID === 1) {
-        renderAnchorPoints();
-    }
+    stage.handleResize();    
     
 }
 
