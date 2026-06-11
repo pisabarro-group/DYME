@@ -9,7 +9,7 @@ chmod -R 777 /dyme_root/projects
 REPO_URL="https://github.com/pisabarro-group/DYME.git"
 FRONTEND_DIR="/dyme_base/frontend"
 
-info "Updating frontend from GitHub..."
+echo "Updating frontend from GitHub..."
 git clone --depth 1 --filter=blob:none --sparse "$REPO_URL" /tmp/dyme_repo
 git -C /tmp/dyme_repo sparse-checkout set frontend
 cp -R /tmp/dyme_repo/frontend/. "$FRONTEND_DIR/"

@@ -121,6 +121,7 @@ RUN set -eux; \
     mv /etc/mongod.conf /etc/mongod.conf.orig
 
 COPY ./nodes/main_node/mongod.conf /etc/mongod.conf
+RUN chmod 644 /etc/mongod.conf
 
 #########################################################################################################################
 # STEP 3 - DYME CONDA ENVIRONMENT
@@ -197,6 +198,9 @@ RUN a2enmod rewrite
 #########################################################################################################################
 # STEP 5 - ENTRYPOINT
 #########################################################################################################################
+
+COPY ./nodes/main_node/update_frontend.sh /usr/local/bin/update_frontend.sh
+RUN chmod +x /usr/local/bin/update_frontend.sh
 
 COPY ./nodes/main_node/dyme-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/dyme-entrypoint.sh
