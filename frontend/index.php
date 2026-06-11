@@ -167,71 +167,9 @@ if($_GET["s"] == "mainproject" || $_GET["s"] == "mainproject_rest"){
             <ul class="navbar-nav align-items-center ms-auto">
                 
                 <!-- Alerts Dropdown-->
-                <li class="nav-item dropdown no-caret d-none d-sm-block me-3 dropdown-notifications">
-                    <a class="btn btn-icon btn-transparent-dark dropdown-toggle" id="navbarDropdownAlerts" href="javascript:void(0);" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i data-feather="bell"></i></a>
-                    <div class="dropdown-menu dropdown-menu-end border-0 shadow animated--fade-in-up" aria-labelledby="navbarDropdownAlerts">
-                        <h6 class="dropdown-header dropdown-notifications-header">
-                            <i class="me-2" data-feather="bell"></i>
-                            Alerts Center
-                        </h6>
-                        <!-- Example Alert 1-->
-                        <a class="dropdown-item dropdown-notifications-item" href="#!">
-                            <div class="dropdown-notifications-item-icon bg-warning"><i data-feather="activity"></i></div>
-                            <div class="dropdown-notifications-item-content">
-                                <div class="dropdown-notifications-item-content-details">December 29, 2021</div>
-                                <div class="dropdown-notifications-item-content-text">This is an alert message. It's nothing serious, but it requires your attention.</div>
-                            </div>
-                        </a>
-                        <!-- Example Alert 2-->
-                        <a class="dropdown-item dropdown-notifications-item" href="#!">
-                            <div class="dropdown-notifications-item-icon bg-info"><i data-feather="bar-chart"></i></div>
-                            <div class="dropdown-notifications-item-content">
-                                <div class="dropdown-notifications-item-content-details">December 22, 2021</div>
-                                <div class="dropdown-notifications-item-content-text">A new monthly report is ready. Click here to view!</div>
-                            </div>
-                        </a>
-                        <!-- Example Alert 3-->
-                        <a class="dropdown-item dropdown-notifications-item" href="#!">
-                            <div class="dropdown-notifications-item-icon bg-danger"><i class="fas fa-exclamation-triangle"></i></div>
-                            <div class="dropdown-notifications-item-content">
-                                <div class="dropdown-notifications-item-content-details">December 8, 2021</div>
-                                <div class="dropdown-notifications-item-content-text">Critical system failure, systems shutting down.</div>
-                            </div>
-                        </a>
-                        <!-- Example Alert 4-->
-                        <a class="dropdown-item dropdown-notifications-item" href="#!">
-                            <div class="dropdown-notifications-item-icon bg-success"><i data-feather="user-plus"></i></div>
-                            <div class="dropdown-notifications-item-content">
-                                <div class="dropdown-notifications-item-content-details">December 2, 2021</div>
-                                <div class="dropdown-notifications-item-content-text">New user request. Woody has requested access to the organization.</div>
-                            </div>
-                        </a>
-                        <a class="dropdown-item dropdown-notifications-footer" href="#!">View All Alerts</a>
-                    </div>
-                </li>
+                
                
-                <!-- User Dropdown-->
-                <li class="nav-item dropdown no-caret dropdown-user me-3 me-lg-4">
-                    <a class="btn btn-icon btn-transparent-dark dropdown-toggle" id="navbarDropdownUserImage" href="javascript:void(0);" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><img class="img-fluid" src="assets/img/illustrations/profiles/profile-1.png" /></a>
-                    <div class="dropdown-menu dropdown-menu-end border-0 shadow animated--fade-in-up" aria-labelledby="navbarDropdownUserImage">
-                        <h6 class="dropdown-header d-flex align-items-center">
-                            <img class="dropdown-user-img" src="assets/img/illustrations/profiles/profile-1.png" />
-                            <div class="dropdown-user-details">
-                                <div class="dropdown-user-details-name">Pedro Guillem</div>
-                                <div class="dropdown-user-details-email">pedro_manuel.guillem_gloria@tu-dresden.de</div>
-                            </div>
-                        </h6>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#!">
-                            <div class="dropdown-item-icon"><i data-feather="settings"></i></div>
-                            Account
-                        </a>
-                        <a class="dropdown-item" href="login.php?log=logout">
-                            <div class="dropdown-item-icon"><i data-feather="log-out"></i></div>
-                            Logout
-                        </a>
-                    </div>
-                </li>
+                
             </ul>
         </nav>
 
@@ -247,20 +185,8 @@ if($_GET["s"] == "mainproject" || $_GET["s"] == "mainproject_rest"){
                             <div class="nav accordion" id="accordionSidenav">
 
                                 <!--PIPELINE CONTROL-->
-                                <div class="sidenav-menu-heading">DYME CONTROL</div>
-                                <a class="nav-link" href="javascript:void(0);" data-bs-toggle="collapse" data-bs-target="#collapseProcess" aria-expanded="true" aria-controls="collapseProcess">
-                                    <div class="nav-link-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-repeat"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg></div>
-                                    Project Explorer
-                                    <div class="sidenav-collapse-arrow"><svg class="svg-inline--fa fa-angle-down" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="angle-down" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" data-fa-i2svg=""><path fill="currentColor" d="M192 384c-8.188 0-16.38-3.125-22.62-9.375l-160-160c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L192 306.8l137.4-137.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-160 160C208.4 380.9 200.2 384 192 384z"></path></svg><!-- <i class="fas fa-angle-down"></i> Font Awesome fontawesome.com --></div>
-                                </a>
-                                <div class="collapse show" id="collapseProcess" data-bs-parent="#accordionSidenav" style="">
-                                    <nav class="sidenav-menu-nested nav accordion" id="accordionSidenavPages">
-                                        <a class="nav-link" href="index.php?s=mainproject_rest&id=<?=$id_project?>&zone=dashboard" onclick="loadDashboard()">Dashboard</a>
-                                        <a class="nav-link" href="index.php?s=mainproject_rest&id=<?=$id_project?>&zone=jobcontrol" onclick="loadJobManager()">Job Manager</a>
-                                    </nav>
-                                </div>
-
-
+                                
+                            
 
                                 <!--DYME EXPLORATION -->
                                 <div class="sidenav-menu-heading">PROJECT WORKSPACE</div>
