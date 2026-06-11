@@ -168,30 +168,79 @@ install_packages_rhel() {
     "$SUDO" "$PKG_MANAGER" install -y "$@"
 }
 
+#FIX - Add the actual repo in Ubuntu 24
 install_docker_debian() {
     info "Attempting to install Docker and buildx on Debian/Ubuntu..."
 
-    if install_packages_apt ca-certificates curl gnupg lsb-release docker.io docker-buildx-plugin; then
+    # First try the distro's default repos (may work on some systems <22)
+    if install_packages_apt docker.io docker-buildx-plugin; then
         return 0
     fi
 
-    warn "Distro package install failed. Trying fallback packages..."
-    install_packages_apt ca-certificates curl gnupg lsb-release docker.io || return 1
+    warn "Default repo install failed. Trying Docker's official repository..."
 
-    return 0
+    # Ensure keyrings directory exists
+    $SUDO mkdir -p /etc/apt/keyrings
+
+    # Remove any broken previous attempt
+    $SUDO rm -f /etc/apt/keyrings/docker.gpg
+    $SUDO rm -f /etc/apt/sources.list.d/docker.list
+
+    # Download and store Docker's GPG key
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+        $SUDO gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    $SUDO chmod a+r /etc/apt/keyrings/docker.gpg
+
+    # Detect Ubuntu codename (use lsb_release, fall back to 'noble')
+    local ubuntu_codename
+    ubuntu_codename=$(lsb_release -cs 2>/dev/null || echo "noble")
+
+    # Add Docker's official apt repository
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+https://download.docker.com/linux/ubuntu ${ubuntu_codename} stable" | \
+        $SUDO tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+    # Invalidate the apt cache so the new repo is picked up
+    $SUDO apt-get update -y
+
+    # Install Docker engine and buildx from the official repo
+    if $SUDO apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin; then
+        return 0
+    fi
+
+    warn "Docker official repo install also failed."
+    return 1
 }
 
+#FIX - Add the actual repo in Ubuntu 24 for apptainer
 install_apptainer_debian() {
     info "Attempting to install Apptainer on Debian/Ubuntu..."
 
+    # First try default repos (unlikely to work on Ubuntu 24.04 but worth trying)
     apt_update_once
-
-    if install_packages_apt apptainer; then
+    if $SUDO apt-get install -y apptainer; then
         return 0
     fi
 
     warn "Package 'apptainer' not found in standard repositories."
-    warn "On some Debian-based systems, Apptainer is not available from default repos."
+    warn "Trying Apptainer's official PPA..."
+
+    # add-apt-repository requires software-properties-common
+    if ! have_cmd add-apt-repository; then
+        $SUDO apt-get install -y software-properties-common || {
+            warn "Could not install software-properties-common"
+            return 1
+        }
+    fi
+
+    # Add the official Apptainer PPA and install
+    $SUDO add-apt-repository -y ppa:apptainer/ppa
+    $SUDO apt-get update -y
+    if $SUDO apt-get install -y apptainer; then
+        return 0
+    fi
+
+    warn "Apptainer PPA install also failed."
     return 1
 }
 
@@ -218,41 +267,46 @@ install_apptainer_rhel() {
 }
 
 ensure_docker_service_running() {
+
     if ! have_cmd docker; then
         return 1
     fi
 
+    # Docker is accessible already — nothing to do
     if run_quiet docker info; then
         return 0
     fi
 
     warn "Docker is installed but not currently usable by the current user."
 
+    # Try enabling and starting the service via systemctl
     if [ -n "$SUDO" ]; then
         info "Attempting to enable and start the Docker service..."
         $SUDO systemctl enable docker >/dev/null 2>&1 || true
         $SUDO systemctl start docker >/dev/null 2>&1 || true
     fi
 
+    # Check again after service start
     if run_quiet docker info; then
         return 0
     fi
 
-    if [ -n "$SUDO" ]; then
-        warn "Attempting to add user '$USER' to the docker group..."
-        $SUDO groupadd -f docker >/dev/null 2>&1 || true
-        $SUDO usermod -aG docker "$USER" || true
+    # Add user to docker group if not already a member
+    if ! groups | grep -q docker; then
+        if [ -n "$SUDO" ]; then
+            info "Adding user '$USER' to the docker group..."
+            $SUDO groupadd -f docker >/dev/null 2>&1 || true
+            $SUDO usermod -aG docker "$USER" || true
+
+            info "Re-executing installer with docker group active (no logout needed)..."
+            exec sg docker "$0"
+        fi
     fi
 
-    info "Re-checking Docker access in the current session..."
-    if run_quiet docker info; then
-        return 0
-    fi
-
+    # If we get here, group was already set but docker still doesn't work
     echo ""
     warn "Docker still cannot be executed by the current user in this session."
     warn "Please log out and log in again, then rerun this installer."
-    warn "If Docker still does not work after that, please check your system configuration manually."
     return 1
 }
 
