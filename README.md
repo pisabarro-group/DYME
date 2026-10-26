@@ -325,7 +325,23 @@ Worker nodes deposit MD simulations and assets in the shared folder (dyme_root) 
 
 ## Citation
 
-DYME is currently undergoing peer review.
-Preprint: (https://www.biorxiv.org/content/10.64898/2026.04.10.717642v1)
+If you use DyME in your research, please cite:
+
+> Guillem-Gloria PM, Ruiz-Gómez G, Pisabarro MT (2026). **DyME: An MD-based engine exploiting HTP mutagenesis for protein engineering and recognition mimicry.** *PLOS Computational Biology* 22(10): e1014221. https://doi.org/10.1371/journal.pcbi.1014221
+
+### BibTeX
+
+```bibtex
+@article{GuillemGloria2026DyME,
+  author  = {Guillem-Gloria, P. M. and Ruiz-G{\'o}mez, G. and Pisabarro, M. T.},
+  title   = {{DyME}: An {MD}-based engine exploiting {HTP} mutagenesis for protein engineering and recognition mimicry},
+  journal = {PLOS Computational Biology},
+  year    = {2026},
+  volume  = {22},
+  number  = {10},
+  pages   = {e1014221},
+  doi     = {10.1371/journal.pcbi.1014221}
+}
+```
 
 ---
